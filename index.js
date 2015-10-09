@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(192);
-	module.exports = __webpack_require__(196);
+	module.exports = __webpack_require__(197);
 
 
 /***/ },
@@ -1676,11 +1676,8 @@
 
 /***/ },
 /* 76 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	//
-	// an easy way to specify a map-grid laid out in ascii
-	//
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', {
@@ -1691,26 +1688,39 @@
 	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 	
+	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _x = Symbol('_x');
-	var _y = Symbol('_y');
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _GridMapEs6Js = __webpack_require__(194);
+	
+	var _GridMapEs6Js2 = _interopRequireDefault(_GridMapEs6Js);
+	
 	var _e = Symbol('_e');
 	var _grid = Symbol('_grid');
 	var _toXY = Symbol('_toXY');
 	var _toRowCol = Symbol('_toRowCol');
 	
-	var Grid = (function () {
+	//
+	// an easy way to specify a map-grid laid out in ascii
+	//
+	
+	var Grid = (function (_GridMap) {
+		_inherits(Grid, _GridMap);
+	
 		function Grid(ascii) {
 			var map = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	
 			_classCallCheck(this, Grid);
 	
+			_get(Object.getPrototypeOf(Grid.prototype), 'constructor', this).call(this);
 			map = Object.assign({ ' ': null }, map);
 			this[_e] = map[' '];
 			this[_grid] = [[]];
-			this[_x] = 0;
-			this[_y] = 0;
 			var row = 0,
 			    col = 0;
 			var _iteratorNormalCompletion = true;
@@ -1727,8 +1737,7 @@
 						this[_grid].push([]);
 					} else {
 						if (c === '@') {
-							this.top = row;
-							this.left = col;
+							this.anchorRowCol(row, col);
 						}
 						this[_grid][row].push(map[c] || null);
 					}
@@ -1751,19 +1760,9 @@
 		}
 	
 		_createClass(Grid, [{
-			key: _toXY,
-			value: function value(row, col) {
-				return [this[_x] + col - this.left, this[_y] + row - this.top];
-			}
-		}, {
-			key: _toRowCol,
-			value: function value(x, y) {
-				return [y - this[_y] + this.top, x - this[_x] + this.left];
-			}
-		}, {
 			key: 'get',
 			value: function get(x, y) {
-				var _toRowCol2 = this[_toRowCol](x, y);
+				var _toRowCol2 = this.toRowCol(x, y);
 	
 				var _toRowCol22 = _slicedToArray(_toRowCol2, 2);
 	
@@ -1773,22 +1772,11 @@
 				return this[_grid][row] && typeof this[_grid][row][col] !== 'undefined' ? this[_grid][row][col] : this[_e];
 			}
 		}, {
-			key: 'anchor',
-			value: function anchor(x, y) {
-				if (typeof x === 'undefined') {
-					return [this[_x], this[_y]];
-				} else {
-					this[_x] = x;
-					this[_y] = y;
-					return this;
-				}
-			}
-		}, {
 			key: 'forEach',
 			value: function forEach(cb) {
 				for (var row = 0; row < this[_grid].length; ++row) {
 					for (var col = 0; col < this[_grid][row].length; ++col) {
-						var _toXY2 = this[_toXY](row, col);
+						var _toXY2 = this.toXY(row, col);
 	
 						var _toXY22 = _slicedToArray(_toXY2, 2);
 	
@@ -1803,7 +1791,7 @@
 		}]);
 	
 		return Grid;
-	})();
+	})(_GridMapEs6Js2['default']);
 	
 	exports['default'] = Grid;
 	module.exports = exports['default'];
@@ -6716,7 +6704,7 @@
 	  typeof self === "object" ? self : this
 	);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(199)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(200)))
 
 /***/ },
 /* 192 */
@@ -6840,6 +6828,80 @@
 
 /***/ },
 /* 194 */
+/***/ function(module, exports) {
+
+	//
+	// an anchored row/column based representation of an x/y coordinate system
+	//
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var _aX = Symbol('_aX');
+	var _aY = Symbol('_aY');
+	var _aRow = Symbol('_aRow');
+	var _aCol = Symbol('_aCol');
+	
+	var GridMap = (function () {
+		_createClass(GridMap, [{
+			key: 'toXY',
+			value: function toXY(row, col) {
+				return [col + this[_aX] - this[_aCol], row + this[_aY] - this[_aRow]];
+			}
+		}, {
+			key: 'toRowCol',
+			value: function toRowCol(x, y) {
+				return [y - this[_aY] + this[_aRow], x - this[_aX] + this[_aCol]];
+			}
+		}]);
+	
+		function GridMap() {
+			_classCallCheck(this, GridMap);
+	
+			this[_aX] = 0;
+			this[_aY] = 0;
+			this[_aRow] = 0;
+			this[_aCol] = 0;
+		}
+	
+		_createClass(GridMap, [{
+			key: 'anchorXY',
+			value: function anchorXY(x, y) {
+				if (typeof x === 'undefined') {
+					return [this[_aX], this[_aY]];
+				} else {
+					this[_aX] = x;
+					this[_aY] = y;
+					return this;
+				}
+			}
+		}, {
+			key: 'anchorRowCol',
+			value: function anchorRowCol(row, col) {
+				if (typeof x === 'undefined') {
+					return [this[_aRow], this[_aCol]];
+				} else {
+					this[_aRow] = row;
+					this[_aCol] = col;
+					return this;
+				}
+			}
+		}]);
+	
+		return GridMap;
+	})();
+	
+	exports['default'] = GridMap;
+	module.exports = exports['default'];
+
+/***/ },
+/* 195 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -6930,7 +6992,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 195 */
+/* 196 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -6981,8 +7043,8 @@
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	var flashlight = new _GridEs6Js2['default']('\n\n     ##\n    ####\n   #####\n  ######\n #######\n########\n#@######\n########\n #######\n  ######\n   #####\n    ####\n     ##\n\n', {
-		'#': 1,
+	var flashlight = new _GridEs6Js2['default']('\n\n     ..\n    ....\n   .....\n  ......\n .......\n........\n.@......\n........\n .......\n  ......\n   .....\n    ....\n     ..\n\n', {
+		'.': 1,
 		' ': 0,
 		'@': 1
 	});
@@ -7054,7 +7116,7 @@
 				this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 	
 				/* the player observes itself and bunch of tiles illuminated by his flashlight */
-				flashlight.anchor(this.x, this.y).forEach(function (x, y) {
+				flashlight.anchorXY(this.x, this.y).forEach(function (x, y) {
 	
 					_this2.tryToLookAt(x, y);
 				});
@@ -7068,7 +7130,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 196 */
+/* 197 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* libraries */
@@ -7082,20 +7144,20 @@
 	
 	/* custom tags */
 	
-	__webpack_require__(197);
+	__webpack_require__(198);
 	
 	/* bootstrapping */
 	_riot2['default'].mount('body', 'world-map');
 
 /***/ },
-/* 197 */
+/* 198 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _jquery = __webpack_require__(198);
+	var _jquery = __webpack_require__(199);
 	
 	var _jquery2 = _interopRequireDefault(_jquery);
 	
@@ -7107,11 +7169,11 @@
 	
 	var _symbolsEs6Js = __webpack_require__(38);
 	
-	var _MySpaceTimeEs6Js = __webpack_require__(194);
+	var _MySpaceTimeEs6Js = __webpack_require__(195);
 	
 	var _MySpaceTimeEs6Js2 = _interopRequireDefault(_MySpaceTimeEs6Js);
 	
-	var _PlayerEs6Js = __webpack_require__(195);
+	var _PlayerEs6Js = __webpack_require__(196);
 	
 	var _PlayerEs6Js2 = _interopRequireDefault(_PlayerEs6Js);
 	
@@ -7183,23 +7245,23 @@
 	    this.terrainImg = function (tile) {
 	        switch (tile.terrain) {
 	            case _symbolsEs6Js.terrain.floor:
-	                return __webpack_require__(201);
-	            case _symbolsEs6Js.terrain.wall:
-	                return __webpack_require__(203);
-	            case _symbolsEs6Js.unknown:
 	                return __webpack_require__(202);
+	            case _symbolsEs6Js.terrain.wall:
+	                return __webpack_require__(204);
+	            case _symbolsEs6Js.unknown:
+	                return __webpack_require__(203);
 	        }
 	    };
 	    this.occupantImg = function (tile) {
 	        if (tile.occupant instanceof _PlayerEs6Js2['default']) {
-	            return __webpack_require__(200);
+	            return __webpack_require__(201);
 	        }
 	        return null;
 	    };
 	});
 
 /***/ },
-/* 198 */
+/* 199 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -16415,7 +16477,7 @@
 
 
 /***/ },
-/* 199 */
+/* 200 */
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -16512,25 +16574,25 @@
 
 
 /***/ },
-/* 200 */
+/* 201 */
 /***/ function(module, exports) {
 
 	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wceDB4oxbSWpwAAAPxJREFUWMPtV0EOgyAQHJp+xbdY/UvlLfIYWt/CY7YH2aZOJdq0iUC6t0UgzrCzA0ZEcGSccHD8f+C8d+LtYgQAQsyHuxgAcHFc83oZ4FDkxdeASfUBPfOuofGwzENi4701kS8D75Q4AQDTDwAA8Q6vOTADFvlMDeUxkNyot5UzYMysCvHjT5AXxMB1Rq7676flZ98u+4HqXxnjYKYy9gJCrh3RUwcMX3pEvgzwmQt5QkMM2DhvbGu5D3Q26n2yq+7XpFwwrrO0rgIviKpwYb0WuD9s6b8cBvhmpAykql7HFfHTQ3JlYPNWzMj5TLXzaS0wI1suWZAKan0bPgCL34OT/Akd1gAAAABJRU5ErkJggg=="
 
 /***/ },
-/* 201 */
+/* 202 */
 /***/ function(module, exports) {
 
 	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wcdExkAuo/jOQAAAEhJREFUWMNjdM/J+c8wgICJYYDBqANGHTDqgFEHjDpg1AEs5GpUVfVC4d++vW00CkZYGiA3zkejYNQBow4YdcCoA0YdMOgcAABBNwfOxJ7AHwAAAABJRU5ErkJggg=="
 
 /***/ },
-/* 202 */
+/* 203 */
 /***/ function(module, exports) {
 
 	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wcdExAAa01YcAAAACxJREFUWMPtzkEBADAIAKHT/p23GH4gAVO9Dm3HBAQEBAQEBAQEBAQEBAQEPiESAT9AXSQQAAAAAElFTkSuQmCC"
 
 /***/ },
-/* 203 */
+/* 204 */
 /***/ function(module, exports) {
 
 	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wcdExEipzYo1QAAAMdJREFUWMPtV0EOwiAQHIxfab9S5S20/qX4FutbymPwoD1AIF1E3U1kj9sZ0gwzk1YB8EiM98+1c0uw73sNylD5BzDPcV1vbxEHYwAAdtJVfH4F5tcVTefwwWkcSQfU8tkVUIMxnvMF+D3QdaGLnUunIsblppTPr0C8uFubbLB5oR1YyudXIM5vbq4XXdWAOb48D/yqATd+a0K5Tbi5dC//VHwOJy8Fpc1Xio9xLQVyPPBp11PxchT4luvFfw+0FKjc3/HfKPAAbyJmSHHWcR4AAAAASUVORK5CYII="
