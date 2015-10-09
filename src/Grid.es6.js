@@ -1,52 +1,61 @@
 //
 // an easy way to specify a map-grid laid out in ascii
 //
-export default class Grid extends Array {
+const _x        = Symbol('_x');
+const _y        = Symbol('_y');
+const _e        = Symbol('_e');
+const _grid     = Symbol('_grid');
+const _toXY     = Symbol('_toXY');
+const _toRowCol = Symbol('_toRowCol');
+export default class Grid {
 
 	constructor(ascii, map = {}) {
-		super();
-		this._x = 0;
-		this._y = 0;
-		map = Object.assign({
-			'█': 1,
-			' ': 0,
-			'@': 0
-		}, map);
-		this.push([]);
+		map = Object.assign({ ' ': null }, map);
+		this[_e] = map[' '];
+		this[_grid] = [[]];
+		this[_x] = 0;
+		this[_y] = 0;
 		let row = 0, col = 0;
 		for (let c of ascii) {
 			if (c === '\n') {
 				row += 1;
 				col = -1;
-				this.push([]);
+				this[_grid].push([]);
 			} else {
 				if (c === '@') {
 					this.top  = row;
 					this.left = col;
 				}
-				this[row].push(map[c]);
+				this[_grid][row].push(map[c] || null);
 			}
 			col += 1;
 		}
 	}
 
+	[_toXY](row, col) { return [ this[_x] + col - this.left, this[_y] + row - this.top ] }
+	[_toRowCol](x, y) { return [ y - this[_y] + this.top,    x - this[_x] + this.left  ] }
+
 	get(x, y) {
-		let row = y - this._y + this.top;
-		let col = x - this._x + this.left;
-		return this[row] && this[row][col];
+		let [row, col] = this[_toRowCol](x, y);
+		return (this[_grid][row] && typeof this[_grid][row][col] !== 'undefined')
+			? this[_grid][row][col]
+			: this[_e];
 	}
 
 	anchor(x, y) {
-		this._x = x;
-		this._y = y;
-		return this;
+		if (typeof x === 'undefined') {
+			return [this[_x], this[_y]];
+		} else {
+			this[_x] = x;
+			this[_y] = y;
+			return this;
+		}
 	}
 
 	forEach(cb) {
-		for (let row = 0; row < this.length; ++row) {
-			for (let col = 0; col < this[row].length; ++col) {
-				let x = this._x + col - this.left;
-				let y = this._y + row - this.top;
+		for (let row = 0; row < this[_grid].length; ++row) {
+			for (let col = 0; col < this[_grid][row].length; ++col) {
+				let [x, y] = this[_toXY](row, col);
 				cb(x, y, this.get(x, y));
 			}
 		}
