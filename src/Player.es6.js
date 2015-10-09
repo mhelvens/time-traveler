@@ -25,22 +25,22 @@ function line(x0, y0, x1, y1, cb){
 
 const flashlight = new Grid(`
 
-     ##
-    ####
-   #####
-  ######
- #######
-########
-#@######
-########
- #######
-  ######
-   #####
-    ####
-     ##
+     ..
+    ....
+   .....
+  ......
+ .......
+........
+.@......
+........
+ .......
+  ......
+   .....
+    ....
+     ..
 
 `, {
-	'#': 1,
+	'.': 1,
 	' ': 0,
 	'@': 1
 });
@@ -93,7 +93,7 @@ export default class Player {
 		this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 
 		/* the player observes itself and bunch of tiles illuminated by his flashlight */
-		flashlight.anchor(this.x, this.y).forEach((x, y) => {
+		flashlight.anchorXY(this.x, this.y).forEach((x, y) => {
 
 			this.tryToLookAt(x, y);
 

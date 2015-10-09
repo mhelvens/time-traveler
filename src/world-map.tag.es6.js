@@ -77,6 +77,7 @@ riot.tag('world-map', `
 	class="world-map"
 
 `, function (opts) {
+
     /* the full space-time */
     let spacetime = new MySpaceTime();
 
@@ -133,4 +134,5 @@ riot.tag('world-map', `
         if (tile.occupant instanceof Player) { return require('./img/archeologist.png') }
         return null;
     };
+
 });
