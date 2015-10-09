@@ -1687,31 +1687,30 @@
 		value: true
 	});
 	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
 	
-	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	var _x = Symbol('_x');
+	var _y = Symbol('_y');
+	var _e = Symbol('_e');
+	var _grid = Symbol('_grid');
+	var _toXY = Symbol('_toXY');
+	var _toRowCol = Symbol('_toRowCol');
 	
-	var Grid = (function (_Array) {
-		_inherits(Grid, _Array);
-	
+	var Grid = (function () {
 		function Grid(ascii) {
 			var map = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	
 			_classCallCheck(this, Grid);
 	
-			_get(Object.getPrototypeOf(Grid.prototype), 'constructor', this).call(this);
-			this._x = 0;
-			this._y = 0;
-			map = Object.assign({
-				'█': 1,
-				' ': 0,
-				'@': 0
-			}, map);
-			this.push([]);
+			map = Object.assign({ ' ': null }, map);
+			this[_e] = map[' '];
+			this[_grid] = [[]];
+			this[_x] = 0;
+			this[_y] = 0;
 			var row = 0,
 			    col = 0;
 			var _iteratorNormalCompletion = true;
@@ -1725,13 +1724,13 @@
 					if (c === '\n') {
 						row += 1;
 						col = -1;
-						this.push([]);
+						this[_grid].push([]);
 					} else {
 						if (c === '@') {
 							this.top = row;
 							this.left = col;
 						}
-						this[row].push(map[c]);
+						this[_grid][row].push(map[c] || null);
 					}
 					col += 1;
 				}
@@ -1752,26 +1751,50 @@
 		}
 	
 		_createClass(Grid, [{
+			key: _toXY,
+			value: function value(row, col) {
+				return [this[_x] + col - this.left, this[_y] + row - this.top];
+			}
+		}, {
+			key: _toRowCol,
+			value: function value(x, y) {
+				return [y - this[_y] + this.top, x - this[_x] + this.left];
+			}
+		}, {
 			key: 'get',
 			value: function get(x, y) {
-				var row = y - this._y + this.top;
-				var col = x - this._x + this.left;
-				return this[row] && this[row][col];
+				var _toRowCol2 = this[_toRowCol](x, y);
+	
+				var _toRowCol22 = _slicedToArray(_toRowCol2, 2);
+	
+				var row = _toRowCol22[0];
+				var col = _toRowCol22[1];
+	
+				return this[_grid][row] && typeof this[_grid][row][col] !== 'undefined' ? this[_grid][row][col] : this[_e];
 			}
 		}, {
 			key: 'anchor',
 			value: function anchor(x, y) {
-				this._x = x;
-				this._y = y;
-				return this;
+				if (typeof x === 'undefined') {
+					return [this[_x], this[_y]];
+				} else {
+					this[_x] = x;
+					this[_y] = y;
+					return this;
+				}
 			}
 		}, {
 			key: 'forEach',
 			value: function forEach(cb) {
-				for (var row = 0; row < this.length; ++row) {
-					for (var col = 0; col < this[row].length; ++col) {
-						var x = this._x + col - this.left;
-						var y = this._y + row - this.top;
+				for (var row = 0; row < this[_grid].length; ++row) {
+					for (var col = 0; col < this[_grid][row].length; ++col) {
+						var _toXY2 = this[_toXY](row, col);
+	
+						var _toXY22 = _slicedToArray(_toXY2, 2);
+	
+						var x = _toXY22[0];
+						var y = _toXY22[1];
+	
 						cb(x, y, this.get(x, y));
 					}
 				}
@@ -1780,7 +1803,7 @@
 		}]);
 	
 		return Grid;
-	})(Array);
+	})();
 	
 	exports['default'] = Grid;
 	module.exports = exports['default'];
@@ -6847,7 +6870,11 @@
 	
 	var _GridEs6Js2 = _interopRequireDefault(_GridEs6Js);
 	
-	var initialMap = new _GridEs6Js2['default']('\n\n       █████         █████         █████\n█████         █████         █████         █████\n  █                                         █\n  █                    @                    █\n  █                                         █\n█████         █████         █████         █████\n       █████         █████         █████\n\n');
+	var initialMap = new _GridEs6Js2['default']('\n\n       #####         #####         #####\n#####         #####         #####         #####\n  #                                         #\n  #                    @                    #\n  #                                         #\n#####         #####         #####         #####\n       #####         #####         #####\n\n', {
+		'#': 1,
+		' ': 0,
+		'@': 0
+	});
 	
 	var MySpaceTime = (function (_SpaceTime) {
 		_inherits(MySpaceTime, _SpaceTime);
@@ -6954,7 +6981,11 @@
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	var flashlight = new _GridEs6Js2['default']('\n\n     ██\n    ████\n   █████\n  ██████\n ███████\n████████\n█@██████\n████████\n ███████\n  ██████\n   █████\n    ████\n     ██\n\n', { '@': 1 });
+	var flashlight = new _GridEs6Js2['default']('\n\n     ##\n    ####\n   #####\n  ######\n #######\n########\n#@######\n########\n #######\n  ######\n   #####\n    ####\n     ##\n\n', {
+		'#': 1,
+		' ': 0,
+		'@': 1
+	});
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
