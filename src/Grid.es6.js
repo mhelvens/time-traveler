@@ -1,4 +1,5 @@
 import GridMap from './GridMap.es6.js';
+import {defOr} from './util.es6';
 
 const _e        = Symbol('_e');
 const _grid     = Symbol('_grid');
@@ -8,25 +9,29 @@ const _grid     = Symbol('_grid');
 //
 export default class Grid extends GridMap {
 
-	constructor(ascii, map = {}) {
+	constructor(ascii, options = {}) {
 		super();
-		map = Object.assign({ ' ': null }, map);
-		this[_e] = map[' '];
+		options = Object.assign({ ' ': null, anchor: '@', direction: 'right' }, options);
+		this.anchorD(options.direction);
+		this[_e] = options[' '];
 		this[_grid] = [[]];
 		let row = 0, col = 0;
+		let anchorSet = false;
 		for (let c of ascii) {
 			if (c === '\n') {
 				row += 1;
 				col = -1;
 				this[_grid].push([]);
 			} else {
-				if (c === '@') {
+				if (c === options.anchor) {
 					this.anchorRowCol(row, col);
+					anchorSet = true;
 				}
-				this[_grid][row].push(map[c] || null);
+				this[_grid][row].push(defOr(options[c], null));
 			}
 			col += 1;
 		}
+		if (!anchorSet) { throw new Error(`This grid does not contain an anchor '${options.anchor}'.`) }
 	}
 
 	get(x, y) {

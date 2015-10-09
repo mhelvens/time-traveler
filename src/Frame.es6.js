@@ -1,6 +1,7 @@
 import {assert}  from './util.es6.js';
 
-import SpaceTime from './SpaceTime.es6.js';
+import {SpaceTime} from './SpaceTime.es6.js';
+import GridMap     from './GridMap.es6';
 
 const _tile = Symbol('_tile');
 

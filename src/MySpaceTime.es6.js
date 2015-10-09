@@ -1,7 +1,9 @@
 import {chainIsDefined}            from './util.es6.js';
 import {unknown, nothing, terrain} from './symbols.es6.js';
-import SpaceTime                   from './SpaceTime.es6.js'
+import {SpaceTime}                 from './SpaceTime.es6.js'
 import Grid                        from './Grid.es6.js';
+
+export {Paradox} from './SpaceTime.es6.js'
 
 let initialMap = new Grid(`
 
@@ -14,12 +16,13 @@ let initialMap = new Grid(`
        #####         #####         #####
 
 `, {
-	'#': 1,
-	' ': 0,
-	'@': 0
+	anchor: '@',
+	'#': true,
+	' ': false,
+	'@': false
 });
 
-export default class MySpaceTime extends SpaceTime {
+export class MySpaceTime extends SpaceTime {
 
 	constructor(options) {
 		super(options);
@@ -27,9 +30,9 @@ export default class MySpaceTime extends SpaceTime {
 	}
 
 	setReality(t, x, y, a, val) {
-		if (!this._incursions[t])          { this._incursions[t]          = {}  }
-		if (!this._incursions[t][x])       { this._incursions[t][x]       = {}  }
-		if (!this._incursions[t][x][y])    { this._incursions[t][x][y]    = {}  }
+		if (!this._incursions[t])          { this._incursions[t]       = {}  }
+		if (!this._incursions[t][x])       { this._incursions[t][x]    = {}  }
+		if (!this._incursions[t][x][y])    { this._incursions[t][x][y] = {}  }
 		if (!this._incursions[t][x][y][a]) {
 			this._incursions[t][x][y][a] = val;
 		}

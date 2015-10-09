@@ -40,27 +40,30 @@ const flashlight = new Grid(`
      ..
 
 `, {
-	'.': 1,
-	' ': 0,
-	'@': 1
+	direction: 'right',
+	anchor: '@',
+	'.': true,
+	'@': true,
+	' ': false
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export default class Player {
 
-	constructor({spacetime, age, t, x, y}) {
+	constructor({spacetime, age, t, x, y, d}) {
 		Object.assign(this, {
 			spacetime,
 			age: age || 0,
 			t:   t   || 0,
 			x:   x   || 0,
-			y:   y   || 0
+			y:   y   || 0,
+			d:   d   || 'right'
 		});
 		this.putInSpaceTime();
 	}
 
-	successor(t, x, y) {
+	successor(t, x, y, d) {
 		this.spacetime.observe(t, x, y);
 		if (this.spacetime.getKnown(this.t, x, y, 'terrain') === terrain.wall) {
 			x = y = undefined;
@@ -70,11 +73,13 @@ export default class Player {
 			age: this.age + 1,
 			t: (typeof t === 'undefined') ? this.t + 1 : t,
 			x: (typeof x === 'undefined') ? this.x     : x,
-			y: (typeof y === 'undefined') ? this.y     : y
+			y: (typeof y === 'undefined') ? this.y     : y,
+			d: (typeof d === 'undefined') ? this.d     : d
 		});
 	}
 
-	tryToLookAt(x, y) {
+	lookToward(x, y) {
+		flashlight.anchorXY(this.x, this.y);
 		line(this.x, this.y, x, y, (ix, iy) => {
 			if (!flashlight.get(ix, iy))        { return false }
 			if (ix === this.x && iy === this.y) { return true  }
@@ -93,10 +98,8 @@ export default class Player {
 		this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 
 		/* the player observes itself and bunch of tiles illuminated by his flashlight */
-		flashlight.anchorXY(this.x, this.y).forEach((x, y) => {
-
-			this.tryToLookAt(x, y);
-
+		flashlight.anchorXY(this.x, this.y).anchorD(this.d).forEach((x, y) => {
+			this.lookToward(x, y);
 		});
 
 	}
