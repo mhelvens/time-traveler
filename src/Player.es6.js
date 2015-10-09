@@ -1,4 +1,5 @@
 import {unknown, nothing, terrain} from './symbols.es6.js';
+import Grid                        from './Grid.es6.js';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,26 +23,23 @@ function line(x0, y0, x1, y1, cb){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const flashlight = [
-	[0, 0, 0, 0, 0, 1, 1, 0],
-	[0, 0, 0, 0, 1, 1, 1, 1],
-	[0, 0, 0, 1, 1, 1, 1, 1],
-	[0, 0, 1, 1, 1, 1, 1, 1],
-	[0, 1, 1, 1, 1, 1, 1, 1],
-	[1, 1, 1, 1, 1, 1, 1, 1],
-	[1, 1, 1, 1, 1, 1, 1, 1],
-	[1, 1, 1, 1, 1, 1, 1, 1],
-	[0, 1, 1, 1, 1, 1, 1, 1],
-	[0, 0, 1, 1, 1, 1, 1, 1],
-	[0, 0, 0, 1, 1, 1, 1, 1],
-	[0, 0, 0, 0, 1, 1, 1, 1],
-	[0, 0, 0, 0, 0, 1, 1, 0]
-];
-flashlight.top  = 6; // anchor
-flashlight.left = 1; //
-function withinFlashlight(row, col) {
-	return flashlight[row] && flashlight[row][col];
-}
+const flashlight = new Grid(`
+
+     ██
+    ████
+   █████
+  ██████
+ ███████
+████████
+█@██████
+████████
+ ███████
+  ██████
+   █████
+    ████
+     ██
+
+`, { '@': 1 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -60,8 +58,9 @@ export default class Player {
 
 	successor(t, x, y) {
 		this.spacetime.observe(t, x, y);
-		if (this.spacetime.getKnown(this.t, x, y, 'terrain') === terrain.wall) { x = y = undefined }
-
+		if (this.spacetime.getKnown(this.t, x, y, 'terrain') === terrain.wall) {
+			x = y = undefined;
+		}
 		return new Player({
 			spacetime: this.spacetime,
 			age: this.age + 1,
@@ -72,14 +71,12 @@ export default class Player {
 	}
 
 	tryToLookAt(x, y) {
-		line(this.x, this.y, x, y, (x, y) => {
-			let row = y - this.y + flashlight.top;
-			let col = x - this.x + flashlight.left;
-			if (!withinFlashlight(row, col)) { return false }
-			if (x === this.x && y === this.y) { return true }
-			this.spacetime.observe(this.t, x, y, 'terrain');
-			this.spacetime.observe(this.t, x, y, 'occupant');
-			return this.spacetime.getKnown(this.t, x, y, 'terrain') !== terrain.wall;
+		line(this.x, this.y, x, y, (ix, iy) => {
+			if (!flashlight.get(ix, iy))        { return false }
+			if (ix === this.x && iy === this.y) { return true  }
+			this.spacetime.observe(this.t, ix, iy, 'terrain' );
+			this.spacetime.observe(this.t, ix, iy, 'occupant');
+			return (this.spacetime.getKnown(this.t, ix, iy, 'terrain') !== terrain.wall);
 		});
 	}
 
@@ -92,40 +89,11 @@ export default class Player {
 		this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 
 		/* the player observes itself and bunch of tiles illuminated by his flashlight */
-		for (let row = 0; row < flashlight.length; ++row) {
-			for (let col = 0; col < flashlight[row].length; ++col) {
-				//if (flashlight[row] && flashlight[row][col]) {
+		flashlight.anchor(this.x, this.y).forEach((x, y) => {
 
+			this.tryToLookAt(x, y);
 
-					this.tryToLookAt(this.x+col-flashlight.left, this.y + row - flashlight.top);
-
-					//line(this.x, this.y, , , (x, y) => {
-					//	this.spacetime.observe(this.t, x, y, 'terrain');
-					//	this.spacetime.observe(this.t, x, y, 'occupant');
-					//	if (x === this.x && y === this.y) { return true }
-					//	return this.spacetime.getKnown(this.t, x, y, 'terrain') !== terrain.wall;
-					//});
-
-
-
-
-					//let pos = [this.t, this.x + col - flashlight.left, this.y + row - flashlight.top];
-					//this.spacetime.observe(...pos, 'terrain');
-					//this.spacetime.observe(...pos, 'occupant');
-				//}
-			}
-		}
-
-		///* the player observes itself and bunch of tiles illuminated by his flashlight */
-		//for (let row = 0; row < flashlight.length; ++row) {
-		//	for (let col = 0; col < flashlight[row].length; ++col) {
-		//		if (flashlight[row] && flashlight[row][col]) {
-		//			let pos = [this.t, this.x + col - flashlight.left, this.y + row - flashlight.top];
-		//			this.spacetime.observe(...pos, 'terrain');
-		//			this.spacetime.observe(...pos, 'occupant');
-		//		}
-		//	}
-		//}
+		});
 
 	}
 

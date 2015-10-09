@@ -41,8 +41,4 @@ export default class Frame {
 		return result;
 	}
 
-	centerAround() {
-
-	}
-
 }

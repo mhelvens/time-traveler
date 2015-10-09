@@ -1,18 +1,19 @@
 import {chainIsDefined}            from './util.es6.js';
 import {unknown, nothing, terrain} from './symbols.es6.js';
 import SpaceTime                   from './SpaceTime.es6.js'
+import Grid                        from './Grid.es6.js';
 
-const initialMap = [
-	[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0],
-	[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0]
-];
-initialMap.top  =  3; // anchor
-initialMap.left = 17; //
+let initialMap = new Grid(`
+
+       █████         █████         █████
+█████         █████         █████         █████
+  █                                         █
+  █                    @                    █
+  █                                         █
+█████         █████         █████         █████
+       █████         █████         █████
+
+`);
 
 export default class MySpaceTime extends SpaceTime {
 
@@ -37,9 +38,7 @@ export default class MySpaceTime extends SpaceTime {
 			switch (a) {
 				case 'occupant': { return nothing }
 				case 'terrain': {
-					let row = y + initialMap.top;
-					let col = x + initialMap.left;
-					return (initialMap[row] && initialMap[row][col]) ? terrain.wall : terrain.floor;
+					return initialMap.get(x, y) ? terrain.wall : terrain.floor;
 				}
 			}
 		}
