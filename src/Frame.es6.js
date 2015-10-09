@@ -2,7 +2,11 @@ import {assert}  from './util.es6.js';
 
 import SpaceTime from './SpaceTime.es6.js';
 
-let _tile = Symbol('_tile');
+const _tile = Symbol('_tile');
+
+//
+// A window to view the known information of a given space-time within given boundaries.
+//
 export default class Frame {
 
 	constructor({spacetime, top, left, height, width, t}) {
