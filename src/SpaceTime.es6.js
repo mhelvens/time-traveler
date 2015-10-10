@@ -21,17 +21,16 @@ export class SpaceTime {
 	getReality() { throw new Error("SpaceTime subclasses needs to implement 'getReality'") }
 
 	[_scaffold](t, x, y, a) {
-		if (!this[_data]       [t])          { this[_data]       [t]          = {}        }
-		if (!this[_data]       [t][x])       { this[_data]       [t][x]       = {}        }
-		if (!this[_data]       [t][x][y])    { this[_data]       [t][x][y]    = {}        }
-		if (!this[_data]       [t][x][y][a]) { this[_data]       [t][x][y][a] = undefined }
-		if (!this[_observed]   [t])          { this[_observed]   [t]          = {}        }
-		if (!this[_observed]   [t][x])       { this[_observed]   [t][x]       = {}        }
-		if (!this[_observed]   [t][x][y])    { this[_observed]   [t][x][y]    = {}        }
-		if (!this[_observed]   [t][x][y][a]) { this[_observed]   [t][x][y][a] = unknown   }
-		if (!this[_lastRemembered][x])       { this[_lastRemembered][x]       = {}        }
-		if (!this[_lastRemembered][x][y])    { this[_lastRemembered][x][y]    = {}        }
-		if (!this[_lastRemembered][x][y][a]) { this[_lastRemembered][x][y][a] = unknown   }
+		if (!this[_data]       [t])          { this[_data]       [t]          = {}      }
+		if (!this[_data]       [t][x])       { this[_data]       [t][x]       = {}      }
+		if (!this[_data]       [t][x][y])    { this[_data]       [t][x][y]    = {}      }
+		if (!this[_observed]   [t])          { this[_observed]   [t]          = {}      }
+		if (!this[_observed]   [t][x])       { this[_observed]   [t][x]       = {}      }
+		if (!this[_observed]   [t][x][y])    { this[_observed]   [t][x][y]    = {}      }
+		if (!this[_observed]   [t][x][y][a]) { this[_observed]   [t][x][y][a] = unknown }
+		if (!this[_lastRemembered][x])       { this[_lastRemembered][x]       = {}      }
+		if (!this[_lastRemembered][x][y])    { this[_lastRemembered][x][y]    = {}      }
+		if (!this[_lastRemembered][x][y][a]) { this[_lastRemembered][x][y][a] = unknown }
 	}
 
 	setData(t, x, y, a, val) {
@@ -73,7 +72,15 @@ export class SpaceTime {
 			}
 			this[_lastRemembered][x][y][a] = this[_observed][t][x][y][a];
 		}
+	}
 
+	tile(t, x, y) {
+		return {
+			getKnown:          (a)      => { return this.getKnown(t, x, y, a)          },
+			getData:           (a)      => { return this.getData(t, x, y, a)           },
+			setData:           (a, val) => { return this.setData(t, x, y, a, val)      },
+			getLastRemembered: (a)      => { return this.getLastRemembered(t, x, y, a) }
+		};
 	}
 
 }

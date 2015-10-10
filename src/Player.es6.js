@@ -23,7 +23,7 @@ function line(x0, y0, x1, y1, cb){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const flashlight = new Grid(`
+const fieldOfVision = new Grid(`
 
      ..
     ....
@@ -79,13 +79,13 @@ export default class Player {
 	}
 
 	lookToward(x, y) {
-		flashlight.anchorXY(this.x, this.y);
+		fieldOfVision.anchorXY(this.x, this.y);
 		line(this.x, this.y, x, y, (ix, iy) => {
-			if (!flashlight.get(ix, iy))        { return false }
+			if (!fieldOfVision.get(ix, iy))     { return false }
 			if (ix === this.x && iy === this.y) { return true  }
 			this.spacetime.observe(this.t, ix, iy, 'terrain' );
 			this.spacetime.observe(this.t, ix, iy, 'occupant');
-			return (this.spacetime.getKnown(this.t, ix, iy, 'terrain') !== terrain.wall);
+			return (this.spacetime.getKnown(this.t, ix, iy, 'terrain') !== terrain.wall); // TODO: generalize to 'tile does not obscure vision'
 		});
 	}
 
@@ -93,15 +93,14 @@ export default class Player {
 		/* place this player in reality */
 		this.spacetime.setReality(this.t, this.x, this.y, 'occupant', this);
 
-		/* the player observes itself */
+		/* the player observes its own square */
 		this.spacetime.observe(this.t, this.x, this.y, 'occupant');
 		this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 
-		/* the player observes itself and bunch of tiles illuminated by his flashlight */
-		flashlight.anchorXY(this.x, this.y).anchorD(this.d).forEach((x, y) => {
+		/* the player observes a bunch of squares inside his field of vision */
+		fieldOfVision.anchorXY(this.x, this.y).anchorD(this.d).forEach((x, y) => {
 			this.lookToward(x, y);
 		});
-
 	}
 
 }
