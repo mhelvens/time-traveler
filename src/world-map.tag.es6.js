@@ -11,8 +11,8 @@ import Frame                       from './Frame.es6.js';
 riot.tag('world-map', `
 
     <div class="info">
-        <span><b>world:  </b>t   = {frame.t}   </span>
-        <span><b>player: </b>age = {player.age}</span>
+        <span><b>world:  </b>t   = {frame.t.time}</span>
+        <span><b>player: </b>age = {player.age}  </span>
     </div>
     <table>
         <tr each="{ rowA, row in frame.getKnownAsMatrix(['terrain', 'occupant']) }">
@@ -83,13 +83,30 @@ riot.tag('world-map', `
     /* the full space-time */
     let spacetime = new MySpaceTime();
 
+	/* alternating branches, to show paradox */
+	let tBranches;
+	let tBranchIndex;
+	let tBranchTimer;
+	const setFrameTime = (t) => {
+		this.frame.t = t;
+		tBranches    = spacetime.branchesOf(t);
+		tBranchIndex = tBranches.indexOf(t);
+		clearInterval(tBranchTimer);
+		tBranchTimer = setInterval(() => {
+			tBranchIndex = (tBranchIndex + 1) % tBranches.length;
+			this.frame.t = tBranches[tBranchIndex];
+			this.update();
+		}, 1000);
+	};
+
+
     /* the player */
     this.player = new Player({ spacetime });
 
     /* the frame: a viewing window on spacetime */
     this.frame = new Frame({
         spacetime,
-        t:       0,
+        t:      spacetime[0],
         width:  21,
         height: 21
     });
@@ -102,21 +119,24 @@ riot.tag('world-map', `
     /* move the player (and time) with the arrow keys */
     $(document).keydown((event) => {
         let {t, x, y, d} = this.player;
-        t += 1;
+        let newT;
         switch(event.which) {
-	        case 8:  t -= 4; break; // back in time by 3 units
-            case 37: x -= 1; d = 'left';  break;
-            case 38: y -= 1; d = 'up';    break;
-            case 39: x += 1; d = 'right'; break;
-            case 40: y += 1; d = 'down';  break;
+	        case 8:  newT = t.minus(3);     break; // back in time by 3 units
+            case 37: x   -= 1; d = 'left';  break;
+            case 38: y   -= 1; d = 'up';    break;
+            case 39: x   += 1; d = 'right'; break;
+            case 40: y   += 1; d = 'down';  break;
             default: return; // exit this handler for other keys
         }
+	    event.preventDefault();             // for recognized keys, prevent default browser behavior
 	    d = event.shiftKey ? undefined : d; // when holding shift key, do not turn the player around
-        event.preventDefault(); // prevent the default action (scroll / move caret)
+	    if (!newT) { newT = t.plus(1) }     // by default, move forward in time by 1 step
 
-        /* get player successor and increment timers */
-        this.player = this.player.successor(t, x, y, d);
-        this.frame.t = this.player.t;
+        /* get player successor */
+        this.player = this.player.successor(newT, x, y, d);
+
+	    /* set times */
+	    setFrameTime(newT);
 
         /* center the frame around the player */
         centerAround(this.player);
@@ -127,54 +147,28 @@ riot.tag('world-map', `
 
     /* functions to use in the HTML template */
     this.terrainImg = (row, col) => {
-	    let coords = [this.frame.t, this.frame.getX(col), this.frame.getY(row)];
-	    let known          = spacetime.getKnown         (...coords, 'terrain');
-	    let lastRemembered = spacetime.getLastRemembered(...coords, 'terrain');
-	    let terrainToShow;
-	    if (lastRemembered instanceof Paradox) {
-		    if (typeof spacetime.getData(...coords, '_paradoxicalTerrainAnimation') === 'undefined') {
-			    let counter = 0;
-			    spacetime.setData(...coords, '_paradoxicalTerrainAnimation', setInterval(() => {
-				    spacetime.setData(...coords, '_paradoxicalTerrain', lastRemembered.observed()[counter]);
-				    counter = (counter + 1) % lastRemembered.observed().length;
-				    this.update();
-			    }, 100));
+		let coords = [this.frame.t, this.frame.getX(col), this.frame.getY(row)];
+		let known = spacetime.getKnown(...coords, 'terrain');
+		let guess = spacetime.getGuess(...coords, 'terrain');
+	    for (let src of [known, guess]) {
+		    switch (src) {
+			    case terrain.floor: return (known === guess) ? require('./img/floor-lit.png') : require('./img/floor.png');
+			    case terrain.wall:  return require('./img/wall.png');
 		    }
-		    terrainToShow = spacetime.getData(...coords, '_paradoxicalTerrain');
-	    } else {
-		    terrainToShow = lastRemembered;
 	    }
-        switch (terrainToShow) {
-            case terrain.floor: return known === terrain.floor ? require('./img/floor-lit.png') : require('./img/floor.png');
-            case terrain.wall:  return require('./img/wall.png');
-            case unknown:       return '';
-        }
+	    if (guess === unknown) { return null }
     };
     this.occupantImg = (row, col) => {
-	    let coords = [this.frame.t, this.frame.getX(col), this.frame.getY(row)];
-	    let lastRemembered = spacetime.getLastRemembered(this.frame.t, this.frame.getX(col), this.frame.getY(row), 'occupant');
-	    let occupantToShow;
-	    if (lastRemembered instanceof Paradox) {
-		    if (typeof spacetime.getData(...coords, '_paradoxicalOccupantAnimation') === 'undefined') {
-			    let counter = 0;
-			    spacetime.setData(...coords, '_paradoxicalOccupantAnimation', setInterval(() => {
-				    spacetime.setData(...coords, '_paradoxicalOccupant', lastRemembered.observed()[counter]);
-				    counter = (counter + 1) % lastRemembered.observed().length;
-				    this.update();
-			    }, 100));
-		    }
-		    occupantToShow = spacetime.getData(...coords, '_paradoxicalOccupant');
-	    } else {
-		    occupantToShow = lastRemembered;
-	    }
-        if (occupantToShow instanceof Player) { return require('./img/archaeologist.png') }
-        return null;
+		let coords = [this.frame.t, this.frame.getX(col), this.frame.getY(row)];
+		let known = spacetime.getKnown(...coords, 'occupant');
+	    if (known instanceof Player) { return require('./img/archaeologist.png') }
     };
     this.tileOpacity = (row, col) => {
-	    let known          = spacetime.getKnown         (this.frame.t, this.frame.getX(col), this.frame.getY(row), 'terrain');
-	    let lastRemembered = spacetime.getLastRemembered(this.frame.t, this.frame.getX(col), this.frame.getY(row), 'terrain');
-	    if (known === unknown && lastRemembered !== unknown) { return 0.7 }
-	    return 1;
+		let coords = [this.frame.t, this.frame.getX(col), this.frame.getY(row)];
+		let known = spacetime.getKnown(...coords, 'terrain');
+		let guess = spacetime.getGuess(...coords, 'terrain');
+		if (known === unknown && guess !== unknown) { return 0.5 }
+		else /*                                  */ { return 1   }
     };
 
 });

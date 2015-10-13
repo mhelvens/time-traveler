@@ -51,31 +51,40 @@ const fieldOfVision = new Grid(`
 
 export default class Player {
 
-	constructor({spacetime, age, t, x, y, d}) {
+	constructor({spacetime, age, t, x, y, d, ai}) {
 		Object.assign(this, {
 			spacetime,
 			age: age || 0,
-			t:   t   || 0,
+			t:   t   || spacetime[0],
 			x:   x   || 0,
 			y:   y   || 0,
-			d:   d   || 'right'
+			d:   d   || 'right',
+			ai:  ai  || false
 		});
 		this.putInSpaceTime();
 	}
 
 	successor(t, x, y, d) {
-		this.spacetime.observe(t, x, y);
-		if (this.spacetime.getKnown(this.t, x, y, 'terrain') === terrain.wall) {
-			x = y = undefined;
-		}
+		this.spacetime.observe(t, x, y, 'terrain');
+		if (this.spacetime.getKnown(this.t, x, y, 'terrain') === terrain.wall) { x = y = undefined }
 		return new Player({
 			spacetime: this.spacetime,
 			age: this.age + 1,
-			t: (typeof t === 'undefined') ? this.t + 1 : t,
-			x: (typeof x === 'undefined') ? this.x     : x,
-			y: (typeof y === 'undefined') ? this.y     : y,
-			d: (typeof d === 'undefined') ? this.d     : d
+			t: (typeof t === 'undefined') ? this.t.plus(1) : t,
+			x: (typeof x === 'undefined') ? this.x         : x,
+			y: (typeof y === 'undefined') ? this.y         : y,
+			d: (typeof d === 'undefined') ? this.d         : d
 		});
+	}
+
+	runAI() {
+		let d = ['up', 'right', 'down', 'left'][Math.floor(Math.random() * 4)];
+		this.successor(
+			this.t.plus(1),
+			this.x + (d === 'left' ? -1 : d === 'right' ? 1 : 0),
+			this.y + (d === 'down' ? -1 : d === 'up'    ? 1 : 0),
+			d
+		);
 	}
 
 	lookToward(x, y) {
@@ -94,7 +103,7 @@ export default class Player {
 		this.spacetime.setReality(this.t, this.x, this.y, 'occupant', this);
 
 		/* the player observes its own square */
-		this.spacetime.observe(this.t, this.x, this.y, 'occupant');
+		this.t = this.spacetime.observe(this.t, this.x, this.y, 'occupant');
 		this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 
 		/* the player observes a bunch of squares inside his field of vision */

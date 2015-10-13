@@ -19,9 +19,9 @@ export default class Grid extends GridMap {
 		let anchorSet = false;
 		for (let c of ascii) {
 			if (c === '\n') {
+				this[_grid].push([]);
 				row += 1;
 				col = -1;
-				this[_grid].push([]);
 			} else {
 				if (c === options.anchor) {
 					this.anchorRowCol(row, col);

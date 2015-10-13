@@ -24,7 +24,11 @@ export function last(A) {
 
 export function chainIsDefined(obj, key0, ...otherKeys) {
 	if (typeof key0 === 'undefined') { return true }
-	return !!(key0 in obj) && chainIsDefined(obj[key0], ...otherKeys);
+	if (obj instanceof Map) {
+		return obj.has(key0) && chainIsDefined(obj.get(key0), ...otherKeys);
+	} else {
+		return !!(key0 in obj) && chainIsDefined(obj[key0], ...otherKeys);
+	}
 }
 
 export function defOr(...vals) {
