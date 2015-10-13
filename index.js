@@ -256,7 +256,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// to indexed object, toObject with fallback for non-array-like ES3 strings
-	var IObject = __webpack_require__(34)
+	var IObject = __webpack_require__(35)
 	  , defined = __webpack_require__(16);
 	module.exports = function(it){
 	  return IObject(defined(it));
@@ -434,266 +434,6 @@
 
 /***/ },
 /* 29 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// 0 -> Array#forEach
-	// 1 -> Array#map
-	// 2 -> Array#filter
-	// 3 -> Array#some
-	// 4 -> Array#every
-	// 5 -> Array#find
-	// 6 -> Array#findIndex
-	var ctx      = __webpack_require__(18)
-	  , isObject = __webpack_require__(3)
-	  , IObject  = __webpack_require__(34)
-	  , toObject = __webpack_require__(19)
-	  , toLength = __webpack_require__(9)
-	  , isArray  = __webpack_require__(42)
-	  , SPECIES  = __webpack_require__(5)('species');
-	// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
-	var ASC = function(original, length){
-	  var C;
-	  if(isArray(original) && isObject(C = original.constructor)){
-	    C = C[SPECIES];
-	    if(C === null)C = undefined;
-	  } return new(C === undefined ? Array : C)(length);
-	};
-	module.exports = function(TYPE){
-	  var IS_MAP        = TYPE == 1
-	    , IS_FILTER     = TYPE == 2
-	    , IS_SOME       = TYPE == 3
-	    , IS_EVERY      = TYPE == 4
-	    , IS_FIND_INDEX = TYPE == 6
-	    , NO_HOLES      = TYPE == 5 || IS_FIND_INDEX;
-	  return function($this, callbackfn, that){
-	    var O      = toObject($this)
-	      , self   = IObject(O)
-	      , f      = ctx(callbackfn, that, 3)
-	      , length = toLength(self.length)
-	      , index  = 0
-	      , result = IS_MAP ? ASC($this, length) : IS_FILTER ? ASC($this, 0) : undefined
-	      , val, res;
-	    for(;length > index; index++)if(NO_HOLES || index in self){
-	      val = self[index];
-	      res = f(val, index, O);
-	      if(TYPE){
-	        if(IS_MAP)result[index] = res;            // map
-	        else if(res)switch(TYPE){
-	          case 3: return true;                    // some
-	          case 5: return val;                     // find
-	          case 6: return index;                   // findIndex
-	          case 2: result.push(val);               // filter
-	        } else if(IS_EVERY)return false;          // every
-	      }
-	    }
-	    return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
-	  };
-	};
-
-/***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// getting tag from 19.1.3.6 Object.prototype.toString()
-	var cof = __webpack_require__(17)
-	  , TAG = __webpack_require__(5)('toStringTag')
-	  // ES3 wrong here
-	  , ARG = cof(function(){ return arguments; }()) == 'Arguments';
-	
-	module.exports = function(it){
-	  var O, T, B;
-	  return it === undefined ? 'Undefined' : it === null ? 'Null'
-	    // @@toStringTag case
-	    : typeof (T = (O = Object(it))[TAG]) == 'string' ? T
-	    // builtinTag case
-	    : ARG ? cof(O)
-	    // ES3 arguments fallback
-	    : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
-	};
-
-/***/ },
-/* 31 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var global     = __webpack_require__(6)
-	  , $def       = __webpack_require__(1)
-	  , forOf      = __webpack_require__(24)
-	  , strictNew  = __webpack_require__(37);
-	
-	module.exports = function(NAME, wrapper, methods, common, IS_MAP, IS_WEAK){
-	  var Base  = global[NAME]
-	    , C     = Base
-	    , ADDER = IS_MAP ? 'set' : 'add'
-	    , proto = C && C.prototype
-	    , O     = {};
-	  var fixMethod = function(KEY){
-	    var fn = proto[KEY];
-	    __webpack_require__(12)(proto, KEY,
-	      KEY == 'delete' ? function(a){ return fn.call(this, a === 0 ? 0 : a); }
-	      : KEY == 'has' ? function has(a){ return fn.call(this, a === 0 ? 0 : a); }
-	      : KEY == 'get' ? function get(a){ return fn.call(this, a === 0 ? 0 : a); }
-	      : KEY == 'add' ? function add(a){ fn.call(this, a === 0 ? 0 : a); return this; }
-	      : function set(a, b){ fn.call(this, a === 0 ? 0 : a, b); return this; }
-	    );
-	  };
-	  if(typeof C != 'function' || !(IS_WEAK || proto.forEach && !__webpack_require__(7)(function(){
-	    new C().entries().next();
-	  }))){
-	    // create collection constructor
-	    C = common.getConstructor(wrapper, NAME, IS_MAP, ADDER);
-	    __webpack_require__(35)(C.prototype, methods);
-	  } else {
-	    var inst  = new C
-	      , chain = inst[ADDER](IS_WEAK ? {} : -0, 1)
-	      , buggyZero;
-	    // wrap for init collections from iterable
-	    if(!__webpack_require__(44)(function(iter){ new C(iter); })){ // eslint-disable-line no-new
-	      C = wrapper(function(target, iterable){
-	        strictNew(target, C, NAME);
-	        var that = new Base;
-	        if(iterable != undefined)forOf(iterable, IS_MAP, that[ADDER], that);
-	        return that;
-	      });
-	      C.prototype = proto;
-	      proto.constructor = C;
-	    }
-	    IS_WEAK || inst.forEach(function(val, key){
-	      buggyZero = 1 / key === -Infinity;
-	    });
-	    // fix converting -0 key to +0
-	    if(buggyZero){
-	      fixMethod('delete');
-	      fixMethod('has');
-	      IS_MAP && fixMethod('get');
-	    }
-	    // + fix .add & .set for chaining
-	    if(buggyZero || chain !== inst)fixMethod(ADDER);
-	    // weak collections should not contains .clear method
-	    if(IS_WEAK && proto.clear)delete proto.clear;
-	  }
-	
-	  __webpack_require__(26)(C, NAME);
-	
-	  O[NAME] = C;
-	  $def($def.G + $def.W + $def.F * (C != Base), O);
-	
-	  if(!IS_WEAK)common.setStrong(C, NAME, IS_MAP);
-	
-	  return C;
-	};
-
-/***/ },
-/* 32 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	module.exports = function(KEY, length, exec){
-	  var defined  = __webpack_require__(16)
-	    , SYMBOL   = __webpack_require__(5)(KEY)
-	    , original = ''[KEY];
-	  if(__webpack_require__(7)(function(){
-	    var O = {};
-	    O[SYMBOL] = function(){ return 7; };
-	    return ''[KEY](O) != 7;
-	  })){
-	    __webpack_require__(12)(String.prototype, KEY, exec(defined, SYMBOL, original));
-	    __webpack_require__(10)(RegExp.prototype, SYMBOL, length == 2
-	      // 21.2.5.8 RegExp.prototype[@@replace](string, replaceValue)
-	      // 21.2.5.11 RegExp.prototype[@@split](string, limit)
-	      ? function(string, arg){ return original.call(string, this, arg); }
-	      // 21.2.5.6 RegExp.prototype[@@match](string)
-	      // 21.2.5.9 RegExp.prototype[@@search](string)
-	      : function(string){ return original.call(string, this); }
-	    );
-	  }
-	};
-
-/***/ },
-/* 33 */
-/***/ function(module, exports) {
-
-	// fast apply, http://jsperf.lnkit.com/fast-apply/5
-	module.exports = function(fn, args, that){
-	  var un = that === undefined;
-	  switch(args.length){
-	    case 0: return un ? fn()
-	                      : fn.call(that);
-	    case 1: return un ? fn(args[0])
-	                      : fn.call(that, args[0]);
-	    case 2: return un ? fn(args[0], args[1])
-	                      : fn.call(that, args[0], args[1]);
-	    case 3: return un ? fn(args[0], args[1], args[2])
-	                      : fn.call(that, args[0], args[1], args[2]);
-	    case 4: return un ? fn(args[0], args[1], args[2], args[3])
-	                      : fn.call(that, args[0], args[1], args[2], args[3]);
-	  } return              fn.apply(that, args);
-	};
-
-/***/ },
-/* 34 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// indexed object, fallback for non-array-like ES3 strings
-	var cof = __webpack_require__(17);
-	module.exports = 0 in Object('z') ? Object : function(it){
-	  return cof(it) == 'String' ? it.split('') : Object(it);
-	};
-
-/***/ },
-/* 35 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $redef = __webpack_require__(12);
-	module.exports = function(target, src){
-	  for(var key in src)$redef(target, key, src[key]);
-	  return target;
-	};
-
-/***/ },
-/* 36 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var $       = __webpack_require__(2)
-	  , SPECIES = __webpack_require__(5)('species');
-	module.exports = function(C){
-	  if(__webpack_require__(13) && !(SPECIES in C))$.setDesc(C, SPECIES, {
-	    configurable: true,
-	    get: function(){ return this; }
-	  });
-	};
-
-/***/ },
-/* 37 */
-/***/ function(module, exports) {
-
-	module.exports = function(it, Constructor, name){
-	  if(!(it instanceof Constructor))throw TypeError(name + ": use the 'new' operator!");
-	  return it;
-	};
-
-/***/ },
-/* 38 */
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	var unknown = Symbol('unknown');
-	exports.unknown = unknown;
-	var nothing = Symbol('nothing');
-	exports.nothing = nothing;
-	var terrain = {
-		floor: Symbol('terrain: floor'),
-		wall: Symbol('terrain: wall')
-	};
-	exports.terrain = terrain;
-
-/***/ },
-/* 39 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -753,15 +493,27 @@
 				otherKeys[_key - 2] = _arguments[_key];
 			}
 	
-			if (!(_left = !!(key0 in obj))) {
-				return _left;
-			}
+			if (obj instanceof Map) {
+				if (!(_left = obj.has(key0))) {
+					return _left;
+				}
 	
-			_arguments = [obj[key0]].concat(otherKeys);
-			_x = _arguments[0];
-			_x2 = _arguments[1];
-			_again = true;
-			continue _function;
+				_arguments = [obj.get(key0)].concat(otherKeys);
+				_x = _arguments[0];
+				_x2 = _arguments[1];
+				_again = true;
+				continue _function;
+			} else {
+				if (!(_left = !!(key0 in obj))) {
+					return _left;
+				}
+	
+				_arguments = [obj[key0]].concat(otherKeys);
+				_x = _arguments[0];
+				_x2 = _arguments[1];
+				_again = true;
+				continue _function;
+			}
 		}
 	}
 	
@@ -797,6 +549,266 @@
 			}
 		}
 	}
+
+/***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// 0 -> Array#forEach
+	// 1 -> Array#map
+	// 2 -> Array#filter
+	// 3 -> Array#some
+	// 4 -> Array#every
+	// 5 -> Array#find
+	// 6 -> Array#findIndex
+	var ctx      = __webpack_require__(18)
+	  , isObject = __webpack_require__(3)
+	  , IObject  = __webpack_require__(35)
+	  , toObject = __webpack_require__(19)
+	  , toLength = __webpack_require__(9)
+	  , isArray  = __webpack_require__(42)
+	  , SPECIES  = __webpack_require__(5)('species');
+	// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
+	var ASC = function(original, length){
+	  var C;
+	  if(isArray(original) && isObject(C = original.constructor)){
+	    C = C[SPECIES];
+	    if(C === null)C = undefined;
+	  } return new(C === undefined ? Array : C)(length);
+	};
+	module.exports = function(TYPE){
+	  var IS_MAP        = TYPE == 1
+	    , IS_FILTER     = TYPE == 2
+	    , IS_SOME       = TYPE == 3
+	    , IS_EVERY      = TYPE == 4
+	    , IS_FIND_INDEX = TYPE == 6
+	    , NO_HOLES      = TYPE == 5 || IS_FIND_INDEX;
+	  return function($this, callbackfn, that){
+	    var O      = toObject($this)
+	      , self   = IObject(O)
+	      , f      = ctx(callbackfn, that, 3)
+	      , length = toLength(self.length)
+	      , index  = 0
+	      , result = IS_MAP ? ASC($this, length) : IS_FILTER ? ASC($this, 0) : undefined
+	      , val, res;
+	    for(;length > index; index++)if(NO_HOLES || index in self){
+	      val = self[index];
+	      res = f(val, index, O);
+	      if(TYPE){
+	        if(IS_MAP)result[index] = res;            // map
+	        else if(res)switch(TYPE){
+	          case 3: return true;                    // some
+	          case 5: return val;                     // find
+	          case 6: return index;                   // findIndex
+	          case 2: result.push(val);               // filter
+	        } else if(IS_EVERY)return false;          // every
+	      }
+	    }
+	    return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
+	  };
+	};
+
+/***/ },
+/* 31 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// getting tag from 19.1.3.6 Object.prototype.toString()
+	var cof = __webpack_require__(17)
+	  , TAG = __webpack_require__(5)('toStringTag')
+	  // ES3 wrong here
+	  , ARG = cof(function(){ return arguments; }()) == 'Arguments';
+	
+	module.exports = function(it){
+	  var O, T, B;
+	  return it === undefined ? 'Undefined' : it === null ? 'Null'
+	    // @@toStringTag case
+	    : typeof (T = (O = Object(it))[TAG]) == 'string' ? T
+	    // builtinTag case
+	    : ARG ? cof(O)
+	    // ES3 arguments fallback
+	    : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
+	};
+
+/***/ },
+/* 32 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var global     = __webpack_require__(6)
+	  , $def       = __webpack_require__(1)
+	  , forOf      = __webpack_require__(24)
+	  , strictNew  = __webpack_require__(38);
+	
+	module.exports = function(NAME, wrapper, methods, common, IS_MAP, IS_WEAK){
+	  var Base  = global[NAME]
+	    , C     = Base
+	    , ADDER = IS_MAP ? 'set' : 'add'
+	    , proto = C && C.prototype
+	    , O     = {};
+	  var fixMethod = function(KEY){
+	    var fn = proto[KEY];
+	    __webpack_require__(12)(proto, KEY,
+	      KEY == 'delete' ? function(a){ return fn.call(this, a === 0 ? 0 : a); }
+	      : KEY == 'has' ? function has(a){ return fn.call(this, a === 0 ? 0 : a); }
+	      : KEY == 'get' ? function get(a){ return fn.call(this, a === 0 ? 0 : a); }
+	      : KEY == 'add' ? function add(a){ fn.call(this, a === 0 ? 0 : a); return this; }
+	      : function set(a, b){ fn.call(this, a === 0 ? 0 : a, b); return this; }
+	    );
+	  };
+	  if(typeof C != 'function' || !(IS_WEAK || proto.forEach && !__webpack_require__(7)(function(){
+	    new C().entries().next();
+	  }))){
+	    // create collection constructor
+	    C = common.getConstructor(wrapper, NAME, IS_MAP, ADDER);
+	    __webpack_require__(36)(C.prototype, methods);
+	  } else {
+	    var inst  = new C
+	      , chain = inst[ADDER](IS_WEAK ? {} : -0, 1)
+	      , buggyZero;
+	    // wrap for init collections from iterable
+	    if(!__webpack_require__(44)(function(iter){ new C(iter); })){ // eslint-disable-line no-new
+	      C = wrapper(function(target, iterable){
+	        strictNew(target, C, NAME);
+	        var that = new Base;
+	        if(iterable != undefined)forOf(iterable, IS_MAP, that[ADDER], that);
+	        return that;
+	      });
+	      C.prototype = proto;
+	      proto.constructor = C;
+	    }
+	    IS_WEAK || inst.forEach(function(val, key){
+	      buggyZero = 1 / key === -Infinity;
+	    });
+	    // fix converting -0 key to +0
+	    if(buggyZero){
+	      fixMethod('delete');
+	      fixMethod('has');
+	      IS_MAP && fixMethod('get');
+	    }
+	    // + fix .add & .set for chaining
+	    if(buggyZero || chain !== inst)fixMethod(ADDER);
+	    // weak collections should not contains .clear method
+	    if(IS_WEAK && proto.clear)delete proto.clear;
+	  }
+	
+	  __webpack_require__(26)(C, NAME);
+	
+	  O[NAME] = C;
+	  $def($def.G + $def.W + $def.F * (C != Base), O);
+	
+	  if(!IS_WEAK)common.setStrong(C, NAME, IS_MAP);
+	
+	  return C;
+	};
+
+/***/ },
+/* 33 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	module.exports = function(KEY, length, exec){
+	  var defined  = __webpack_require__(16)
+	    , SYMBOL   = __webpack_require__(5)(KEY)
+	    , original = ''[KEY];
+	  if(__webpack_require__(7)(function(){
+	    var O = {};
+	    O[SYMBOL] = function(){ return 7; };
+	    return ''[KEY](O) != 7;
+	  })){
+	    __webpack_require__(12)(String.prototype, KEY, exec(defined, SYMBOL, original));
+	    __webpack_require__(10)(RegExp.prototype, SYMBOL, length == 2
+	      // 21.2.5.8 RegExp.prototype[@@replace](string, replaceValue)
+	      // 21.2.5.11 RegExp.prototype[@@split](string, limit)
+	      ? function(string, arg){ return original.call(string, this, arg); }
+	      // 21.2.5.6 RegExp.prototype[@@match](string)
+	      // 21.2.5.9 RegExp.prototype[@@search](string)
+	      : function(string){ return original.call(string, this); }
+	    );
+	  }
+	};
+
+/***/ },
+/* 34 */
+/***/ function(module, exports) {
+
+	// fast apply, http://jsperf.lnkit.com/fast-apply/5
+	module.exports = function(fn, args, that){
+	  var un = that === undefined;
+	  switch(args.length){
+	    case 0: return un ? fn()
+	                      : fn.call(that);
+	    case 1: return un ? fn(args[0])
+	                      : fn.call(that, args[0]);
+	    case 2: return un ? fn(args[0], args[1])
+	                      : fn.call(that, args[0], args[1]);
+	    case 3: return un ? fn(args[0], args[1], args[2])
+	                      : fn.call(that, args[0], args[1], args[2]);
+	    case 4: return un ? fn(args[0], args[1], args[2], args[3])
+	                      : fn.call(that, args[0], args[1], args[2], args[3]);
+	  } return              fn.apply(that, args);
+	};
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// indexed object, fallback for non-array-like ES3 strings
+	var cof = __webpack_require__(17);
+	module.exports = 0 in Object('z') ? Object : function(it){
+	  return cof(it) == 'String' ? it.split('') : Object(it);
+	};
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $redef = __webpack_require__(12);
+	module.exports = function(target, src){
+	  for(var key in src)$redef(target, key, src[key]);
+	  return target;
+	};
+
+/***/ },
+/* 37 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var $       = __webpack_require__(2)
+	  , SPECIES = __webpack_require__(5)('species');
+	module.exports = function(C){
+	  if(__webpack_require__(13) && !(SPECIES in C))$.setDesc(C, SPECIES, {
+	    configurable: true,
+	    get: function(){ return this; }
+	  });
+	};
+
+/***/ },
+/* 38 */
+/***/ function(module, exports) {
+
+	module.exports = function(it, Constructor, name){
+	  if(!(it instanceof Constructor))throw TypeError(name + ": use the 'new' operator!");
+	  return it;
+	};
+
+/***/ },
+/* 39 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	var unknown = Symbol('unknown');
+	exports.unknown = unknown;
+	var nothing = Symbol('nothing');
+	exports.nothing = nothing;
+	var terrain = {
+		floor: Symbol('terrain: floor'),
+		wall: Symbol('terrain: wall')
+	};
+	exports.terrain = terrain;
 
 /***/ },
 /* 40 */
@@ -1059,8 +1071,8 @@
 	var $            = __webpack_require__(2)
 	  , hide         = __webpack_require__(10)
 	  , ctx          = __webpack_require__(18)
-	  , species      = __webpack_require__(36)
-	  , strictNew    = __webpack_require__(37)
+	  , species      = __webpack_require__(37)
+	  , strictNew    = __webpack_require__(38)
 	  , defined      = __webpack_require__(16)
 	  , forOf        = __webpack_require__(24)
 	  , step         = __webpack_require__(65)
@@ -1106,7 +1118,7 @@
 	      that[SIZE] = 0;           // size
 	      if(iterable != undefined)forOf(iterable, IS_MAP, that[ADDER], that);
 	    });
-	    __webpack_require__(35)(C.prototype, {
+	    __webpack_require__(36)(C.prototype, {
 	      // 23.1.3.1 Map.prototype.clear()
 	      // 23.2.3.2 Set.prototype.clear()
 	      clear: function clear(){
@@ -1220,7 +1232,7 @@
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
 	var forOf   = __webpack_require__(24)
-	  , classof = __webpack_require__(30);
+	  , classof = __webpack_require__(31);
 	module.exports = function(NAME){
 	  return function toJSON(){
 	    if(classof(this) != NAME)throw TypeError(NAME + "#toJSON isn't generic");
@@ -1237,9 +1249,9 @@
 	'use strict';
 	var hide         = __webpack_require__(10)
 	  , anObject     = __webpack_require__(4)
-	  , strictNew    = __webpack_require__(37)
+	  , strictNew    = __webpack_require__(38)
 	  , forOf        = __webpack_require__(24)
-	  , method       = __webpack_require__(29)
+	  , method       = __webpack_require__(30)
 	  , WEAK         = __webpack_require__(21)('weak')
 	  , isObject     = __webpack_require__(3)
 	  , $has         = __webpack_require__(8)
@@ -1290,7 +1302,7 @@
 	      that._l = undefined; // leak store for frozen objects
 	      if(iterable != undefined)forOf(iterable, IS_MAP, that[ADDER], that);
 	    });
-	    __webpack_require__(35)(C.prototype, {
+	    __webpack_require__(36)(C.prototype, {
 	      // 23.3.3.2 WeakMap.prototype.delete(key)
 	      // 23.4.3.3 WeakSet.prototype.delete(value)
 	      'delete': function(key){
@@ -1583,7 +1595,7 @@
 
 	'use strict';
 	var ctx                = __webpack_require__(18)
-	  , invoke             = __webpack_require__(33)
+	  , invoke             = __webpack_require__(34)
 	  , html               = __webpack_require__(59)
 	  , cel                = __webpack_require__(55)
 	  , global             = __webpack_require__(6)
@@ -1662,7 +1674,7 @@
 /* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var classof   = __webpack_require__(30)
+	var classof   = __webpack_require__(31)
 	  , ITERATOR  = __webpack_require__(5)('iterator')
 	  , Iterators = __webpack_require__(25);
 	module.exports = __webpack_require__(15).getIteratorMethod = function(it){
@@ -1734,7 +1746,7 @@
 	
 	var _GridMapEs6Js2 = _interopRequireDefault(_GridMapEs6Js);
 	
-	var _utilEs6 = __webpack_require__(39);
+	var _utilEs6 = __webpack_require__(29);
 	
 	var _e = Symbol('_e');
 	var _grid = Symbol('_grid');
@@ -1768,9 +1780,9 @@
 					var c = _step.value;
 	
 					if (c === '\n') {
+						this[_grid].push([]);
 						row += 1;
 						col = -1;
-						this[_grid].push([]);
 					} else {
 						if (c === options.anchor) {
 							this.anchorRowCol(row, col);
@@ -1962,15 +1974,22 @@
 	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _symbolsEs6Js = __webpack_require__(38);
+	var _symbolsEs6Js = __webpack_require__(39);
+	
+	var _utilEs6Js = __webpack_require__(29);
 	
 	var _scaffold = Symbol('_scaffold');
 	var _observed = Symbol('_observed');
 	var _data = Symbol('_data');
-	var _lastRemembered = Symbol('_lastRemembered');
+	var _guess = Symbol('_guess');
 	var _possibilities = Symbol('_possibilities');
+	var _successors = Symbol('_successors');
+	var _predecessor = Symbol('_predecessor');
+	var _branch = Symbol('_branch');
 	
 	//
 	// The base class for progressively specifying the content of a
@@ -1981,9 +2000,85 @@
 		function SpaceTime() {
 			_classCallCheck(this, SpaceTime);
 	
-			this[_data] = {};
-			this[_observed] = {};
-			this[_lastRemembered] = {};
+			this[_data] = new Map();
+			this[_observed] = new Map();
+			this[_guess] = {};
+	
+			//let thisST = this;
+			this.State = (function () {
+				function State() {
+					var _ref2 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
+					var predecessor = _ref2.predecessor;
+					var successor = _ref2.successor;
+					var branch = _ref2[_branch];
+	
+					_classCallCheck(this, State);
+	
+					if (predecessor) {
+						if (predecessor[_successors].length > 0 && !branch) {
+							return (0, _utilEs6Js.last)(predecessor[_successors]);
+						}
+						this[_predecessor] = predecessor;
+						this[_successors] = [];
+						predecessor[_successors].push(this);
+						this.time = predecessor.time + 1;
+					} else if (successor) {
+						if (successor[_predecessor]) {
+							return successor[_predecessor];
+						}
+						successor[_predecessor] = this;
+						this[_successors] = [successor];
+						this.time = successor.time - 1;
+					} else {
+						this[_successors] = [];
+						this.time = 0;
+					}
+				}
+	
+				_createClass(State, [{
+					key: _branch,
+					value: function value() {
+						return new State(_defineProperty({ predecessor: this[_predecessor] }, _branch, true));
+					}
+				}, {
+					key: 'plus',
+					value: function plus(dt) {
+						/**/if (dt < 0) {
+							return this.minus(-dt);
+						} else if (dt === 0) {
+							return this;
+						} else /*         */{
+								return this.next.plus(dt - 1);
+							}
+					}
+				}, {
+					key: 'minus',
+					value: function minus(dt) {
+						/**/if (dt < 0) {
+							return this.plus(-dt);
+						} else if (dt === 0) {
+							return this;
+						} else /*         */{
+								return this.prev.minus(dt - 1);
+							}
+					}
+				}, {
+					key: 'next',
+					get: function get() {
+						return new State({ predecessor: this });
+					}
+				}, {
+					key: 'prev',
+					get: function get() {
+						return new State({ successor: this });
+					}
+				}]);
+	
+				return State;
+			})();
+	
+			this[0] = new this.State();
 		}
 	
 		_createClass(SpaceTime, [{
@@ -1994,83 +2089,114 @@
 		}, {
 			key: _scaffold,
 			value: function value(t, x, y, a) {
-				if (!this[_data][t]) {
-					this[_data][t] = {};
+				if (!this[_data].has(t)) {
+					this[_data].set(t, {});
 				}
-				if (!this[_data][t][x]) {
-					this[_data][t][x] = {};
+				if (!this[_data].get(t)[x]) {
+					this[_data].get(t)[x] = {};
 				}
-				if (!this[_data][t][x][y]) {
-					this[_data][t][x][y] = {};
+				if (!this[_data].get(t)[x][y]) {
+					this[_data].get(t)[x][y] = {};
 				}
-				if (!this[_data][t][x][y][a]) {
-					this[_data][t][x][y][a] = undefined;
+				if (!this[_observed].get(t)) {
+					this[_observed].set(t, {});
 				}
-				if (!this[_observed][t]) {
-					this[_observed][t] = {};
+				if (!this[_observed].get(t)[x]) {
+					this[_observed].get(t)[x] = {};
 				}
-				if (!this[_observed][t][x]) {
-					this[_observed][t][x] = {};
+				if (!this[_observed].get(t)[x][y]) {
+					this[_observed].get(t)[x][y] = {};
 				}
-				if (!this[_observed][t][x][y]) {
-					this[_observed][t][x][y] = {};
+				if (!this[_observed].get(t)[x][y][a]) {
+					this[_observed].get(t)[x][y][a] = _symbolsEs6Js.unknown;
 				}
-				if (!this[_observed][t][x][y][a]) {
-					this[_observed][t][x][y][a] = _symbolsEs6Js.unknown;
+				if (!this[_guess][x]) {
+					this[_guess][x] = {};
 				}
-				if (!this[_lastRemembered][x]) {
-					this[_lastRemembered][x] = {};
+				if (!this[_guess][x][y]) {
+					this[_guess][x][y] = {};
 				}
-				if (!this[_lastRemembered][x][y]) {
-					this[_lastRemembered][x][y] = {};
-				}
-				if (!this[_lastRemembered][x][y][a]) {
-					this[_lastRemembered][x][y][a] = _symbolsEs6Js.unknown;
+				if (!this[_guess][x][y][a]) {
+					this[_guess][x][y][a] = _symbolsEs6Js.unknown;
 				}
 			}
 		}, {
 			key: 'setData',
 			value: function setData(t, x, y, a, val) {
 				this[_scaffold](t, x, y, a);
-				this[_data][t][x][y][a] = val;
+				this[_data].get(t)[x][y][a] = val;
 				return this;
 			}
 		}, {
 			key: 'getData',
 			value: function getData(t, x, y, a) {
+				if (!(0, _utilEs6Js.chainIsDefined)(this[_data], t, x, y, a)) {
+					return undefined;
+				}
 				this[_scaffold](t, x, y, a);
-				return this[_data][t][x][y][a];
+				return this[_data].get(t)[x][y][a];
 			}
 		}, {
 			key: 'getKnown',
 			value: function getKnown(t, x, y, a) {
+				if (!(0, _utilEs6Js.chainIsDefined)(this[_observed], t, x, y, a)) {
+					return _symbolsEs6Js.unknown;
+				}
 				this[_scaffold](t, x, y, a);
-				return this[_observed][t][x][y][a];
+				return this[_observed].get(t)[x][y][a];
 			}
 		}, {
-			key: 'getLastRemembered',
-			value: function getLastRemembered(t, x, y, a) {
+			key: 'getGuess',
+			value: function getGuess(t, x, y, a) {
+				if (!(0, _utilEs6Js.chainIsDefined)(this[_guess], x, y, a)) {
+					return _symbolsEs6Js.unknown;
+				}
 				this[_scaffold](t, x, y, a);
-				return this[_lastRemembered][x][y][a];
+				return this[_guess][x][y][a];
 			}
 		}, {
 			key: 'observe',
 			value: function observe(t, x, y, a) {
-				this[_scaffold](t, x, y, a);
-	
 				var reality = this.getReality(t, x, y, a);
-				if (this[_observed][t][x][y][a] === _symbolsEs6Js.unknown || this[_observed][t][x][y][a] === reality) {
-					this[_observed][t][x][y][a] = this[_lastRemembered][x][y][a] = reality;
-				} else {
-					// PARADOX!
-					console.log('PARADOX:', this[_observed][t][x][y][a], reality);
-					if (this[_observed][t][x][y][a] instanceof Paradox) {
-						this[_observed][t][x][y][a].observed(reality);
-					} else {
-						this[_observed][t][x][y][a] = new Paradox().observed(this[_observed][t][x][y][a]).observed(reality);
-					}
-					this[_lastRemembered][x][y][a] = this[_observed][t][x][y][a];
+				if (reality === _symbolsEs6Js.unknown) {
+					return;
 				}
+				this[_scaffold](t, x, y, a);
+				if ([_symbolsEs6Js.unknown, reality].includes(this[_observed].get(t)[x][y][a])) {
+					this[_observed].get(t)[x][y][a] = this[_guess][x][y][a] = reality;
+					return t;
+				} else {
+					console.log('PARADOX:', this[_observed].get(t)[x][y][a], reality);
+					var t2 = t[_branch]();
+					this[_scaffold](t2, x, y, a);
+					this[_observed].get(t2)[x][y][a] = this[_guess][x][y][a] = reality;
+					return t2;
+				}
+			}
+		}, {
+			key: 'branchesOf',
+			value: function branchesOf(t) {
+				return t.prev[_successors];
+			}
+		}, {
+			key: 'tile',
+			value: function tile(t, x, y) {
+				var _this = this;
+	
+				return {
+					getKnown: function getKnown(a) {
+						return _this.getKnown(t, x, y, a);
+					},
+					getData: function getData(a) {
+						return _this.getData(t, x, y, a);
+					},
+					setData: function setData(a, v) {
+						return _this.setData(t, x, y, a, v);
+					},
+					getGuess: function getGuess(a) {
+						return _this.getGuess(t, x, y, a);
+					}
+				};
 			}
 		}]);
 	
@@ -3551,7 +3677,7 @@
 
 	// 19.1.2.1 Object.assign(target, source, ...)
 	var toObject = __webpack_require__(19)
-	  , IObject  = __webpack_require__(34)
+	  , IObject  = __webpack_require__(35)
 	  , enumKeys = __webpack_require__(56)
 	  , has      = __webpack_require__(8);
 	
@@ -3663,7 +3789,7 @@
 
 	'use strict';
 	var path      = __webpack_require__(87)
-	  , invoke    = __webpack_require__(33)
+	  , invoke    = __webpack_require__(34)
 	  , aFunction = __webpack_require__(23);
 	module.exports = function(/* ...pargs */){
 	  var fn     = aFunction(this)
@@ -3717,8 +3843,8 @@
 	  , has              = __webpack_require__(8)
 	  , cof              = __webpack_require__(17)
 	  , $def             = __webpack_require__(1)
-	  , invoke           = __webpack_require__(33)
-	  , arrayMethod      = __webpack_require__(29)
+	  , invoke           = __webpack_require__(34)
+	  , arrayMethod      = __webpack_require__(30)
 	  , IE_PROTO         = __webpack_require__(21)('__proto__')
 	  , isObject         = __webpack_require__(3)
 	  , anObject         = __webpack_require__(4)
@@ -3728,7 +3854,7 @@
 	  , toInteger        = __webpack_require__(28)
 	  , toIndex          = __webpack_require__(27)
 	  , toLength         = __webpack_require__(9)
-	  , IObject          = __webpack_require__(34)
+	  , IObject          = __webpack_require__(35)
 	  , fails            = __webpack_require__(7)
 	  , ObjectProto      = Object.prototype
 	  , A                = []
@@ -4016,7 +4142,7 @@
 	var KEY    = 'findIndex'
 	  , $def   = __webpack_require__(1)
 	  , forced = true
-	  , $find  = __webpack_require__(29)(6);
+	  , $find  = __webpack_require__(30)(6);
 	// Shouldn't skip holes
 	if(KEY in [])Array(1)[KEY](function(){ forced = false; });
 	$def($def.P + $def.F * forced, 'Array', {
@@ -4035,7 +4161,7 @@
 	var KEY    = 'find'
 	  , $def   = __webpack_require__(1)
 	  , forced = true
-	  , $find  = __webpack_require__(29)(5);
+	  , $find  = __webpack_require__(30)(5);
 	// Shouldn't skip holes
 	if(KEY in [])Array(1)[KEY](function(){ forced = false; });
 	$def($def.P + $def.F * forced, 'Array', {
@@ -4112,7 +4238,7 @@
 /* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(36)(Array);
+	__webpack_require__(37)(Array);
 
 /***/ },
 /* 97 */
@@ -4161,7 +4287,7 @@
 	var strong = __webpack_require__(52);
 	
 	// 23.1 Map Objects
-	__webpack_require__(31)('Map', function(get){
+	__webpack_require__(32)('Map', function(get){
 	  return function Map(){ return get(this, arguments[0]); };
 	}, {
 	  // 23.1.3.6 Map.prototype.get(key)
@@ -4759,7 +4885,7 @@
 
 	'use strict';
 	// 19.1.3.6 Object.prototype.toString()
-	var classof = __webpack_require__(30)
+	var classof = __webpack_require__(31)
 	  , test    = {};
 	test[__webpack_require__(5)('toStringTag')] = 'z';
 	if(test + '' != '[object z]'){
@@ -4777,16 +4903,16 @@
 	  , LIBRARY    = __webpack_require__(45)
 	  , global     = __webpack_require__(6)
 	  , ctx        = __webpack_require__(18)
-	  , classof    = __webpack_require__(30)
+	  , classof    = __webpack_require__(31)
 	  , $def       = __webpack_require__(1)
 	  , isObject   = __webpack_require__(3)
 	  , anObject   = __webpack_require__(4)
 	  , aFunction  = __webpack_require__(23)
-	  , strictNew  = __webpack_require__(37)
+	  , strictNew  = __webpack_require__(38)
 	  , forOf      = __webpack_require__(24)
 	  , setProto   = __webpack_require__(46).set
 	  , same       = __webpack_require__(69)
-	  , species    = __webpack_require__(36)
+	  , species    = __webpack_require__(37)
 	  , SPECIES    = __webpack_require__(5)('species')
 	  , RECORD     = __webpack_require__(21)('record')
 	  , asap       = __webpack_require__(85)
@@ -4958,7 +5084,7 @@
 	      $reject.call(record, err);
 	    }
 	  };
-	  __webpack_require__(35)(P.prototype, {
+	  __webpack_require__(36)(P.prototype, {
 	    // 25.4.5.3 Promise.prototype.then(onFulfilled, onRejected)
 	    then: function then(onFulfilled, onRejected){
 	      var S = anObject(anObject(this).constructor)[SPECIES];
@@ -5373,7 +5499,7 @@
 	  __webpack_require__(12)(global, 'RegExp', $RegExp);
 	}
 	
-	__webpack_require__(36)($RegExp);
+	__webpack_require__(37)($RegExp);
 
 /***/ },
 /* 157 */
@@ -5391,7 +5517,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// @@match logic
-	__webpack_require__(32)('match', 1, function(defined, MATCH){
+	__webpack_require__(33)('match', 1, function(defined, MATCH){
 	  // 21.1.3.11 String.prototype.match(regexp)
 	  return function match(regexp){
 	    'use strict';
@@ -5406,7 +5532,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// @@replace logic
-	__webpack_require__(32)('replace', 2, function(defined, REPLACE, $replace){
+	__webpack_require__(33)('replace', 2, function(defined, REPLACE, $replace){
 	  // 21.1.3.14 String.prototype.replace(searchValue, replaceValue)
 	  return function replace(searchValue, replaceValue){
 	    'use strict';
@@ -5423,7 +5549,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// @@search logic
-	__webpack_require__(32)('search', 1, function(defined, SEARCH){
+	__webpack_require__(33)('search', 1, function(defined, SEARCH){
 	  // 21.1.3.15 String.prototype.search(regexp)
 	  return function search(regexp){
 	    'use strict';
@@ -5438,7 +5564,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// @@split logic
-	__webpack_require__(32)('split', 2, function(defined, SPLIT, $split){
+	__webpack_require__(33)('split', 2, function(defined, SPLIT, $split){
 	  // 21.1.3.17 String.prototype.split(separator, limit)
 	  return function split(separator, limit){
 	    'use strict';
@@ -5458,7 +5584,7 @@
 	var strong = __webpack_require__(52);
 	
 	// 23.2 Set Objects
-	__webpack_require__(31)('Set', function(get){
+	__webpack_require__(32)('Set', function(get){
 	  return function Set(){ return get(this, arguments[0]); };
 	}, {
 	  // 23.2.3.1 Set.prototype.add(value)
@@ -5888,7 +6014,7 @@
 	  , tmp          = {};
 	
 	// 23.3 WeakMap Objects
-	var $WeakMap = __webpack_require__(31)('WeakMap', function(get){
+	var $WeakMap = __webpack_require__(32)('WeakMap', function(get){
 	  return function WeakMap(){ return get(this, arguments[0]); };
 	}, {
 	  // 23.3.3.3 WeakMap.prototype.get(key)
@@ -5928,7 +6054,7 @@
 	var weak = __webpack_require__(54);
 	
 	// 23.4 WeakSet Objects
-	__webpack_require__(31)('WeakSet', function(get){
+	__webpack_require__(32)('WeakSet', function(get){
 	  return function WeakSet(){ return get(this, arguments[0]); };
 	}, {
 	  // 23.4.3.1 WeakSet.prototype.add(value)
@@ -6156,7 +6282,7 @@
 	// ie9- setTimeout & setInterval additional parameters fix
 	var global     = __webpack_require__(6)
 	  , $def       = __webpack_require__(1)
-	  , invoke     = __webpack_require__(33)
+	  , invoke     = __webpack_require__(34)
 	  , partial    = __webpack_require__(86)
 	  , navigator  = global.navigator
 	  , MSIE       = !!navigator && /MSIE .\./.test(navigator.userAgent); // <- dirty ie9- check
@@ -6964,7 +7090,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _utilEs6Js = __webpack_require__(39);
+	var _utilEs6Js = __webpack_require__(29);
 	
 	var _SpaceTimeEs6Js = __webpack_require__(78);
 	
@@ -7083,9 +7209,9 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var _utilEs6Js = __webpack_require__(39);
+	var _utilEs6Js = __webpack_require__(29);
 	
-	var _symbolsEs6Js = __webpack_require__(38);
+	var _symbolsEs6Js = __webpack_require__(39);
 	
 	var _SpaceTimeEs6Js = __webpack_require__(78);
 	
@@ -7114,30 +7240,30 @@
 			_classCallCheck(this, MySpaceTime);
 	
 			_get(Object.getPrototypeOf(MySpaceTime.prototype), 'constructor', this).call(this, options);
-			this._incursions = {};
+			this._incursions = new Map();
 		}
 	
 		_createClass(MySpaceTime, [{
 			key: 'setReality',
 			value: function setReality(t, x, y, a, val) {
-				if (!this._incursions[t]) {
-					this._incursions[t] = {};
+				if (!this._incursions.has(t)) {
+					this._incursions.set(t, {});
 				}
-				if (!this._incursions[t][x]) {
-					this._incursions[t][x] = {};
+				if (!this._incursions.get(t)[x]) {
+					this._incursions.get(t)[x] = {};
 				}
-				if (!this._incursions[t][x][y]) {
-					this._incursions[t][x][y] = {};
+				if (!this._incursions.get(t)[x][y]) {
+					this._incursions.get(t)[x][y] = {};
 				}
-				if (!this._incursions[t][x][y][a]) {
-					this._incursions[t][x][y][a] = val;
+				if (!this._incursions.get(t)[x][y][a]) {
+					this._incursions.get(t)[x][y][a] = val;
 				}
 			}
 		}, {
 			key: 'getReality',
 			value: function getReality(t, x, y, a) {
 				if ((0, _utilEs6Js.chainIsDefined)(this._incursions, t, x, y, a)) {
-					return this._incursions[t][x][y][a];
+					return this._incursions.get(t)[x][y][a];
 				} else {
 					// standard map-layout with no occupants
 					switch (a) {
@@ -7175,7 +7301,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _symbolsEs6Js = __webpack_require__(38);
+	var _symbolsEs6Js = __webpack_require__(39);
 	
 	var _GridEs6Js = __webpack_require__(76);
 	
@@ -7211,7 +7337,7 @@
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	var flashlight = new _GridEs6Js2['default']('\n\n     ..\n    ....\n   .....\n  ......\n .......\n........\n.@......\n........\n .......\n  ......\n   .....\n    ....\n     ..\n\n', {
+	var fieldOfVision = new _GridEs6Js2['default']('\n\n     ..\n    ....\n   .....\n  ......\n .......\n........\n.@......\n........\n .......\n  ......\n   .....\n    ....\n     ..\n\n', {
 		direction: 'right',
 		anchor: '@',
 		'.': true,
@@ -7235,7 +7361,7 @@
 			Object.assign(this, {
 				spacetime: spacetime,
 				age: age || 0,
-				t: t || 0,
+				t: t || spacetime[0],
 				x: x || 0,
 				y: y || 0,
 				d: d || 'right'
@@ -7246,14 +7372,14 @@
 		_createClass(Player, [{
 			key: 'successor',
 			value: function successor(t, x, y, d) {
-				this.spacetime.observe(t, x, y);
+				this.spacetime.observe(t, x, y, 'terrain');
 				if (this.spacetime.getKnown(this.t, x, y, 'terrain') === _symbolsEs6Js.terrain.wall) {
 					x = y = undefined;
 				}
 				return new Player({
 					spacetime: this.spacetime,
 					age: this.age + 1,
-					t: typeof t === 'undefined' ? this.t + 1 : t,
+					t: typeof t === 'undefined' ? this.t.plus(1) : t,
 					x: typeof x === 'undefined' ? this.x : x,
 					y: typeof y === 'undefined' ? this.y : y,
 					d: typeof d === 'undefined' ? this.d : d
@@ -7264,9 +7390,9 @@
 			value: function lookToward(x, y) {
 				var _this = this;
 	
-				flashlight.anchorXY(this.x, this.y);
+				fieldOfVision.anchorXY(this.x, this.y);
 				line(this.x, this.y, x, y, function (ix, iy) {
-					if (!flashlight.get(ix, iy)) {
+					if (!fieldOfVision.get(ix, iy)) {
 						return false;
 					}
 					if (ix === _this.x && iy === _this.y) {
@@ -7274,7 +7400,7 @@
 					}
 					_this.spacetime.observe(_this.t, ix, iy, 'terrain');
 					_this.spacetime.observe(_this.t, ix, iy, 'occupant');
-					return _this.spacetime.getKnown(_this.t, ix, iy, 'terrain') !== _symbolsEs6Js.terrain.wall;
+					return _this.spacetime.getKnown(_this.t, ix, iy, 'terrain') !== _symbolsEs6Js.terrain.wall; // TODO: generalize to 'tile does not obscure vision'
 				});
 			}
 		}, {
@@ -7285,12 +7411,12 @@
 				/* place this player in reality */
 				this.spacetime.setReality(this.t, this.x, this.y, 'occupant', this);
 	
-				/* the player observes itself */
-				this.spacetime.observe(this.t, this.x, this.y, 'occupant');
-				this.spacetime.observe(this.t, this.x, this.y, 'terrain');
+				/* the player observes its own square */
+				this.t = this.spacetime.observe(this.t, this.x, this.y, 'occupant');
+				this.t = this.spacetime.observe(this.t, this.x, this.y, 'terrain');
 	
-				/* the player observes itself and bunch of tiles illuminated by his flashlight */
-				flashlight.anchorXY(this.x, this.y).anchorD(this.d).forEach(function (x, y) {
+				/* the player observes a bunch of squares inside his field of vision */
+				fieldOfVision.anchorXY(this.x, this.y).anchorD(this.d).forEach(function (x, y) {
 					_this2.lookToward(x, y);
 				});
 			}
@@ -7368,9 +7494,9 @@
 	
 	var _riot2 = _interopRequireDefault(_riot);
 	
-	var _utilEs6Js = __webpack_require__(39);
+	var _utilEs6Js = __webpack_require__(29);
 	
-	var _symbolsEs6Js = __webpack_require__(38);
+	var _symbolsEs6Js = __webpack_require__(39);
 	
 	var _MySpaceTimeEs6Js = __webpack_require__(195);
 	
@@ -7382,11 +7508,27 @@
 	
 	var _FrameEs6Js2 = _interopRequireDefault(_FrameEs6Js);
 	
-	_riot2['default'].tag('world-map', '\n\n    <div class="info">\n        <span><b>world:  </b>t   = {frame.t}   </span>\n        <span><b>player: </b>age = {player.age}</span>\n    </div>\n    <table>\n        <tr each="{ rowA, row in frame.getKnownAsMatrix([\'terrain\', \'occupant\']) }">\n            <td each="{ tile, col in rowA }" style="background-color: black">\n                <div class="tile-square" style="opacity: { tileOpacity(row, col) }">\n\t                <div class="tile-square" style="background: url({ terrainImg(row, col) })"></div>\n\t                <div class="tile-square center-content" style="background: url({ occupantImg(row, col) })" if="{ occupantImg(row, col) }">\n\t                    <span class="age-indicator">{ tile.occupant.age }</span>\n\t                </div>\n                </div>\n            </td>\n        </tr>\n    </table>\n\n', '\n\n    .world-map {\n        display: inline-block;\n    }\n    div.info {\n        margin: 4px 0px;\n    }\n    div.info > span {\n        display: inline-block;\n        padding: 2px 4px;\n        border: solid 1px gray;\n    }\n    table {\n        border: solid 1px black;\n        border-spacing: 0;\n    }\n    td, .tile-square {\n        width:      32px;\n        height:     32px;\n        max-width:  32px;\n        max-height: 32px;\n        overflow: hidden;\n        margin:  0;\n        padding: 0;\n        text-align: center;\n    }\n    td {\n        position: relative;\n    }\n    div.tile-square {\n        position: absolute;\n        top:  0;\n        left: 0;\n    }\n    div.center-content {\n        display: flex;\n        align-items: flex-end;\n        justify-content: right;\n    }\n    span.age-indicator {\n        font-weight: bold;\n        color: white;\n        background-color: black;\n        padding: 0 2px;\n    }\n\n', '\n\n\tclass="world-map"\n\n', function (opts) {
+	_riot2['default'].tag('world-map', '\n\n    <div class="info">\n        <span><b>world:  </b>t   = {frame.t.time}</span>\n        <span><b>player: </b>age = {player.age}  </span>\n    </div>\n    <table>\n        <tr each="{ rowA, row in frame.getKnownAsMatrix([\'terrain\', \'occupant\']) }">\n            <td each="{ tile, col in rowA }" style="background-color: black">\n                <div class="tile-square" style="opacity: { tileOpacity(row, col) }">\n\t                <div class="tile-square" style="background: url({ terrainImg(row, col) })"></div>\n\t                <div class="tile-square center-content" style="background: url({ occupantImg(row, col) })" if="{ occupantImg(row, col) }">\n\t                    <span class="age-indicator">{ tile.occupant.age }</span>\n\t                </div>\n                </div>\n            </td>\n        </tr>\n    </table>\n\n', '\n\n    .world-map {\n        display: inline-block;\n    }\n    div.info {\n        margin: 4px 0px;\n    }\n    div.info > span {\n        display: inline-block;\n        padding: 2px 4px;\n        border: solid 1px gray;\n    }\n    table {\n        border: solid 1px black;\n        border-spacing: 0;\n    }\n    td, .tile-square {\n        width:      32px;\n        height:     32px;\n        max-width:  32px;\n        max-height: 32px;\n        overflow: hidden;\n        margin:  0;\n        padding: 0;\n        text-align: center;\n    }\n    td {\n        position: relative;\n    }\n    div.tile-square {\n        position: absolute;\n        top:  0;\n        left: 0;\n    }\n    div.center-content {\n        display: flex;\n        align-items: flex-end;\n        justify-content: right;\n    }\n    span.age-indicator {\n        font-weight: bold;\n        color: white;\n        background-color: black;\n        padding: 0 2px;\n    }\n\n', '\n\n\tclass="world-map"\n\n', function (opts) {
 	    var _this = this;
 	
 	    /* the full space-time */
 	    var spacetime = new _MySpaceTimeEs6Js.MySpaceTime();
+	
+	    /* alternating branches, to show paradox */
+	    var tBranches = undefined;
+	    var tBranchIndex = undefined;
+	    var tBranchTimer = undefined;
+	    var setFrameTime = function setFrameTime(t) {
+	        _this.frame.t = t;
+	        tBranches = spacetime.branchesOf(t);
+	        tBranchIndex = tBranches.indexOf(t);
+	        clearInterval(tBranchTimer);
+	        tBranchTimer = setInterval(function () {
+	            tBranchIndex = (tBranchIndex + 1) % tBranches.length;
+	            _this.frame.t = tBranches[tBranchIndex];
+	            _this.update();
+	        }, 1000);
+	    };
 	
 	    /* the player */
 	    this.player = new _PlayerEs6Js2['default']({ spacetime: spacetime });
@@ -7394,7 +7536,7 @@
 	    /* the frame: a viewing window on spacetime */
 	    this.frame = new _FrameEs6Js2['default']({
 	        spacetime: spacetime,
-	        t: 0,
+	        t: spacetime[0],
 	        width: 21,
 	        height: 21
 	    });
@@ -7415,12 +7557,10 @@
 	        var y = _player.y;
 	        var d = _player.d;
 	
-	        t += 1;
+	        var newT = undefined;
 	        switch (event.which) {
 	            case 8:
-	                t -= 4;break; // back in time by 3 units
-	            case 13:
-	                t += 10;break; // forward in time by 5 units
+	                newT = t.minus(3);break; // back in time by 3 units
 	            case 37:
 	                x -= 1;d = 'left';break;
 	            case 38:
@@ -7432,12 +7572,17 @@
 	            default:
 	                return; // exit this handler for other keys
 	        }
+	        event.preventDefault(); // for recognized keys, prevent default browser behavior
 	        d = event.shiftKey ? undefined : d; // when holding shift key, do not turn the player around
-	        event.preventDefault(); // prevent the default action (scroll / move caret)
+	        if (!newT) {
+	            newT = t.plus(1);
+	        } // by default, move forward in time by 1 step
 	
-	        /* get player successor and increment timers */
-	        _this.player = _this.player.successor(t, x, y, d);
-	        _this.frame.t = _this.player.t;
+	        /* get player successor */
+	        _this.player = _this.player.successor(newT, x, y, d);
+	
+	        /* set times */
+	        setFrameTime(newT);
 	
 	        /* center the frame around the player */
 	        centerAround(_this.player);
@@ -7450,63 +7595,37 @@
 	    this.terrainImg = function (row, col) {
 	        var coords = [_this.frame.t, _this.frame.getX(col), _this.frame.getY(row)];
 	        var known = spacetime.getKnown.apply(spacetime, coords.concat(['terrain']));
-	        var lastRemembered = spacetime.getLastRemembered.apply(spacetime, coords.concat(['terrain']));
-	        var terrainToShow = undefined;
-	        if (lastRemembered instanceof _MySpaceTimeEs6Js.Paradox) {
-	            if (typeof spacetime.getData.apply(spacetime, coords.concat(['_paradoxicalTerrainAnimation'])) === 'undefined') {
-	                (function () {
-	                    var counter = 0;
-	                    spacetime.setData.apply(spacetime, coords.concat(['_paradoxicalTerrainAnimation', setInterval(function () {
-	                        spacetime.setData.apply(spacetime, coords.concat(['_paradoxicalTerrain', lastRemembered.observed()[counter]]));
-	                        counter = (counter + 1) % lastRemembered.observed().length;
-	                        _this.update();
-	                    }, 100)]));
-	                })();
+	        var guess = spacetime.getGuess.apply(spacetime, coords.concat(['terrain']));
+	        var _arr = [known, guess];
+	        for (var _i = 0; _i < _arr.length; _i++) {
+	            var src = _arr[_i];
+	            switch (src) {
+	                case _symbolsEs6Js.terrain.floor:
+	                    return known === guess ? __webpack_require__(203) : __webpack_require__(204);
+	                case _symbolsEs6Js.terrain.wall:
+	                    return __webpack_require__(205);
 	            }
-	            terrainToShow = spacetime.getData.apply(spacetime, coords.concat(['_paradoxicalTerrain']));
-	        } else {
-	            terrainToShow = lastRemembered;
 	        }
-	        switch (terrainToShow) {
-	            case _symbolsEs6Js.terrain.floor:
-	                return known === _symbolsEs6Js.terrain.floor ? __webpack_require__(203) : __webpack_require__(204);
-	            case _symbolsEs6Js.terrain.wall:
-	                return __webpack_require__(205);
-	            case _symbolsEs6Js.unknown:
-	                return '';
+	        if (guess === _symbolsEs6Js.unknown) {
+	            return null;
 	        }
 	    };
 	    this.occupantImg = function (row, col) {
 	        var coords = [_this.frame.t, _this.frame.getX(col), _this.frame.getY(row)];
-	        var lastRemembered = spacetime.getLastRemembered(_this.frame.t, _this.frame.getX(col), _this.frame.getY(row), 'occupant');
-	        var occupantToShow = undefined;
-	        if (lastRemembered instanceof _MySpaceTimeEs6Js.Paradox) {
-	            if (typeof spacetime.getData.apply(spacetime, coords.concat(['_paradoxicalOccupantAnimation'])) === 'undefined') {
-	                (function () {
-	                    var counter = 0;
-	                    spacetime.setData.apply(spacetime, coords.concat(['_paradoxicalOccupantAnimation', setInterval(function () {
-	                        spacetime.setData.apply(spacetime, coords.concat(['_paradoxicalOccupant', lastRemembered.observed()[counter]]));
-	                        counter = (counter + 1) % lastRemembered.observed().length;
-	                        _this.update();
-	                    }, 100)]));
-	                })();
-	            }
-	            occupantToShow = spacetime.getData.apply(spacetime, coords.concat(['_paradoxicalOccupant']));
-	        } else {
-	            occupantToShow = lastRemembered;
-	        }
-	        if (occupantToShow instanceof _PlayerEs6Js2['default']) {
+	        var known = spacetime.getKnown.apply(spacetime, coords.concat(['occupant']));
+	        if (known instanceof _PlayerEs6Js2['default']) {
 	            return __webpack_require__(202);
 	        }
-	        return null;
 	    };
 	    this.tileOpacity = function (row, col) {
-	        var known = spacetime.getKnown(_this.frame.t, _this.frame.getX(col), _this.frame.getY(row), 'terrain');
-	        var lastRemembered = spacetime.getLastRemembered(_this.frame.t, _this.frame.getX(col), _this.frame.getY(row), 'terrain');
-	        if (known === _symbolsEs6Js.unknown && lastRemembered !== _symbolsEs6Js.unknown) {
-	            return 0.7;
-	        }
-	        return 1;
+	        var coords = [_this.frame.t, _this.frame.getX(col), _this.frame.getY(row)];
+	        var known = spacetime.getKnown.apply(spacetime, coords.concat(['terrain']));
+	        var guess = spacetime.getGuess.apply(spacetime, coords.concat(['terrain']));
+	        if (known === _symbolsEs6Js.unknown && guess !== _symbolsEs6Js.unknown) {
+	            return 0.5;
+	        } else /*                                  */{
+	                return 1;
+	            }
 	    };
 	});
 
