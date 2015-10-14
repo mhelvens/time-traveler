@@ -38,3 +38,17 @@ export function defOr(...vals) {
 		}
 	}
 }
+
+export function abstractMethod(cls, mth) {
+	throw new Error(`${cls} subclasses needs to implement '${mth}'`);
+}
+
+export function randomElement(arr) {
+	return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export function range(from, to) {
+	let result = [];
+	for (let i = from; i < to; ++i) { result.push(i) }
+	return result;
+}

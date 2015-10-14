@@ -1,22 +1,18 @@
 import {assert}  from './util.es6.js';
 
-import {SpaceTime} from './SpaceTime.es6.js';
-import GridMap     from './GridMap.es6';
-
-const _tile = Symbol('_tile');
+import {Observer} from './Observer.es6.js';
+import GridMap    from './GridMap.es6';
 
 //
 // A window to view the known information of a given space-time within given boundaries.
 //
-export default class Frame {
+export default class Frame { // TODO: inherit from GridMap and redo interface accordingly
 
-	constructor({spacetime, top, left, height, width, t}) {
-		assert(() => spacetime instanceof SpaceTime);
-		Object.assign(this, {spacetime, top, left, height, width, t});
-	}
+	observer;
 
-	[_tile](row, col, a) {
-		return this.spacetime.getKnown(this.t, this.getX(col), this.getY(row), a);
+	constructor({observer, top, left, height, width, t}) {
+		assert(() => observer instanceof Observer);
+		Object.assign(this, { observer, top, left, height, width, t });
 	}
 
 	getX(col) { return this.left + col }
@@ -24,22 +20,7 @@ export default class Frame {
 
 	getKnown(row, col, a) {
 		if (!(0 <= row && row <= this.height && 0 <= col && col < this.width)) { throw new RangeError() }
-		return this[_tile](row, col, a);
-	}
-
-	getKnownAsMatrix(aspects) {
-		let result = [];
-		for (let row = 0; row < this.height; ++row) {
-			result.push([]);
-			for (let col = 0; col < this.width; ++col) {
-				result[row].push({});
-				for (let a of aspects) {
-					result[row][col][a] = this[_tile](row, col, a);
-				}
-			}
-		}
-
-		return result;
+		return this.observer.getKnown(this.t, this.getX(col), this.getY(row), a);
 	}
 
 }

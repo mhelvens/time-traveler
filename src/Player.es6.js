@@ -1,5 +1,8 @@
 import {unknown, nothing, terrain} from './symbols.es6.js';
 import Grid                        from './Grid.es6.js';
+import {randomElement, defOr}      from './util.es6.js';
+import {Observer}                  from './Observer.es6.js';
+import Time                        from './Time.es6.js';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,13 +52,27 @@ const fieldOfVision = new Grid(`
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const _successorData = Symbol('_successorData');
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 export default class Player {
 
-	constructor({spacetime, age, t, x, y, d, ai}) {
+	reality; // TODO: rename to 'actor'
+	observer;
+	age;
+	t;
+	x;
+	y;
+	d;
+	ai;
+
+	constructor({reality, observer, age, t, x, y, d, ai}) {
 		Object.assign(this, {
-			spacetime,
+			reality,
+			observer,
 			age: age || 0,
-			t:   t   || spacetime[0],
+			t:   t   || new Time(),
 			x:   x   || 0,
 			y:   y   || 0,
 			d:   d   || 'right',
@@ -64,51 +81,78 @@ export default class Player {
 		this.putInSpaceTime();
 	}
 
-	successor(t, x, y, d) {
-		this.spacetime.observe(t, x, y, 'terrain');
-		if (this.spacetime.getKnown(this.t, x, y, 'terrain') === terrain.wall) { x = y = undefined }
+	receiveInput(event) {
+		let {t, x, y, d} = this;
+		let newT;
+		switch(event.which) {
+			case 8:  newT = t.minus(3);   break; // back in time by 3 units
+			case 37: x -= 1; d = 'left';  break;
+			case 38: y -= 1; d = 'up';    break;
+			case 39: x += 1; d = 'right'; break;
+			case 40: y += 1; d = 'down';  break;
+			default: return false; // exit this handler for other keys
+		}
+		d = event.shiftKey ? undefined : d; // when holding shift key, do not turn the player around
+		if (!newT) { newT = t.plus(1) }     // by default, move forward in time by 1 step
+
+		/* store this data to be used in a successor */
+		this[_successorData] = { t: newT, x, y, d };
+
+		/* indicate that the input was used */
+		return true;
+	}
+
+	successor(ai) {
+		let t, x, y, d;
+		if (this[_successorData]) {
+			({t, x, y, d} = this[_successorData]);
+		} else if (this.ai) {
+			d = randomElement(['up', 'right', 'down', 'left']);
+			t = this.t.plus(1);
+			x = this.x + (d === 'left' ? -1 : d === 'right' ? 1 : 0);
+			y = this.y + (d === 'down' ? -1 : d === 'up'    ? 1 : 0);
+		} else {
+			t = this.t.plus(1);
+			x = this.x;
+			y = this.y;
+			d = this.d;
+		}
+		this.observer.observe(t, x, y, 'terrain');
+		if (this.observer.getKnown(this.t, x, y, 'terrain') === terrain.wall) {
+			x = this.x;
+			y = this.y;
+		}
 		return new Player({
-			spacetime: this.spacetime,
-			age: this.age + 1,
-			t: (typeof t === 'undefined') ? this.t.plus(1) : t,
-			x: (typeof x === 'undefined') ? this.x         : x,
-			y: (typeof y === 'undefined') ? this.y         : y,
-			d: (typeof d === 'undefined') ? this.d         : d
-		});
-	}
-
-	runAI() {
-		let d = ['up', 'right', 'down', 'left'][Math.floor(Math.random() * 4)];
-		this.successor(
-			this.t.plus(1),
-			this.x + (d === 'left' ? -1 : d === 'right' ? 1 : 0),
-			this.y + (d === 'down' ? -1 : d === 'up'    ? 1 : 0),
-			d
-		);
-	}
-
-	lookToward(x, y) {
-		fieldOfVision.anchorXY(this.x, this.y);
-		line(this.x, this.y, x, y, (ix, iy) => {
-			if (!fieldOfVision.get(ix, iy))     { return false }
-			if (ix === this.x && iy === this.y) { return true  }
-			this.spacetime.observe(this.t, ix, iy, 'terrain' );
-			this.spacetime.observe(this.t, ix, iy, 'occupant');
-			return (this.spacetime.getKnown(this.t, ix, iy, 'terrain') !== terrain.wall); // TODO: generalize to 'tile does not obscure vision'
+			reality:  this.reality,
+			observer: this.observer,
+			age:      this.age + 1,
+			ai:       defOr(ai, this.ai),
+			t, x, y, d
 		});
 	}
 
 	putInSpaceTime() {
+		let thisxy = [this.x, this.y];
+		const coords = () => [this.t, ...thisxy];
+
 		/* place this player in reality */
-		this.spacetime.setReality(this.t, this.x, this.y, 'occupant', this);
+		this.reality.setReality(...coords(), 'occupant', this);
 
 		/* the player observes its own square */
-		this.t = this.spacetime.observe(this.t, this.x, this.y, 'occupant');
-		this.spacetime.observe(this.t, this.x, this.y, 'terrain');
+		// note that this may change this.t, if the player finds himself in another time-branch
+		this.t = this.observer.observe(...coords(), 'occupant');
+		/*    */ this.observer.observe(...coords(), 'terrain' );
 
 		/* the player observes a bunch of squares inside his field of vision */
-		fieldOfVision.anchorXY(this.x, this.y).anchorD(this.d).forEach((x, y) => {
-			this.lookToward(x, y);
+		fieldOfVision.anchorXY(...thisxy).anchorD(this.d).forEach((x, y) => {
+			line(...thisxy, x, y, (ix, iy) => {
+				if (!fieldOfVision.get(ix, iy))     { return false }
+				if (ix === this.x && iy === this.y) { return true  }
+				this.observer.observe(this.t, ix, iy, 'terrain' );
+				this.observer.observe(this.t, ix, iy, 'occupant');
+				return (this.observer.getKnown(this.t, ix, iy, 'terrain') !== terrain.wall);
+				// TODO: ^ generalize to 'tile does not obscure vision'
+			});
 		});
 	}
 
