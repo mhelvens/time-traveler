@@ -88,7 +88,7 @@ export default class Player {
 		let {t, x, y, d} = this;
 		let newT;
 		switch(event.which) {
-			case 8:  newT = t.minus(3);   break; // back in time by 3 units
+			case 8:  newT = t.minus(4);   break; // back in time by 3 units
 			case 37: x -= 1; d = 'left';  break;
 			case 38: y -= 1; d = 'up';    break;
 			case 39: x += 1; d = 'right'; break;

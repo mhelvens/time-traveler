@@ -7466,7 +7466,7 @@
 				var newT = undefined;
 				switch (event.which) {
 					case 8:
-						newT = t.minus(3);break; // back in time by 3 units
+						newT = t.minus(4);break; // back in time by 3 units
 					case 37:
 						x -= 1;d = 'left';break;
 					case 38:
