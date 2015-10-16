@@ -20,7 +20,7 @@ riot.tag('world-map', `
     </div>
     <table>
         <tr each="{ row in rows }">
-            <td each="{ col in parent.cols }" style="background-color: black">
+            <td each="{ col in cols }" style="background-color: black">
                 <div class="tile-square" style="opacity: { tileOpacity(row, col) }">
 	                <div class="tile-square" style="background: url({ terrainImg(row, col) })"></div>
 	                <div class="tile-square center-content" style="background: url({ occupantImg(row, col) })" if="{ occupantImg(row, col) }">
@@ -187,10 +187,13 @@ riot.tag('world-map', `
 	};
     this.tileOpacity = (row, col) => {
 	    let tile = this.tile(row, col);
+	    let observed = this.player.observable(tile.t, tile.x, tile.y, 'terrain');
 		let known = tile.getKnown('terrain');
 		let guess = tile.getGuess('terrain');
-		if (known === unknown && guess !== unknown) { return 0.5 }
-		else /*                                  */ { return 1   }
+	    /**/ if (observed !== unknown) { return 1    }
+		else if (known    !== unknown) { return 0.75 }
+		else if (guess    !== unknown) { return 0.5  }
+	    else                           { return 0    }
     };
 
 });

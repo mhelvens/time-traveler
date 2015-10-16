@@ -22,7 +22,7 @@ export default class Time {
 			this.time = 0;
 		}
 	}
-	get branch() { return new Time({ predecessor: this.predecessor, branch: true }) }
+	branch()     { return new Time({ predecessor: this.predecessor, branch: true }) }
 	get next()   { return new Time({ predecessor: this }) }
 	get prev()   { return new Time({ successor:   this }) }
 	plus(dt) {

@@ -1,4 +1,5 @@
-import Time                                   from './Time.es6';
+import Time                                   from './Time.es6.js';
+import DeepMap                                from './DeepMap.es6.js';
 import {unknown, nothing, terrain}            from './symbols.es6.js';
 import {last, chainIsDefined, abstractMethod} from './util.es6.js';
 
@@ -14,52 +15,32 @@ const _guess            = Symbol('_guess');
 export class Observer {
 
 	constructor(reality) {
-		this[_observed] = new Map();
-		this[_guess]    = {};
-		this.reality  = reality;
-	}
-
-	[_scaffoldObserved](t, x, y, a) {
-		if (!this[_observed].get(t))          { this[_observed].set(t           , {})     }
-		if (!this[_observed].get(t)[x])       { this[_observed].get(t)[x]       = {}      }
-		if (!this[_observed].get(t)[x][y])    { this[_observed].get(t)[x][y]    = {}      }
-		if (!this[_observed].get(t)[x][y][a]) { this[_observed].get(t)[x][y][a] = unknown }
-	}
-
-	[_scaffoldGuess](t, x, y, a) {
-		if (!this[_guess][x])       { this[_guess][x]       = {}      }
-		if (!this[_guess][x][y])    { this[_guess][x][y]    = {}      }
-		if (!this[_guess][x][y][a]) { this[_guess][x][y][a] = unknown }
+		this[_observed] = new DeepMap({ depth: 4, defaultValue: unknown });
+		this[_guess]    = new DeepMap({ depth: 3, defaultValue: unknown });
+		this.reality    = reality;
 	}
 
 	getKnown(t, x, y, a) {
-		if (!chainIsDefined(this[_observed], t, x, y, a)) { return unknown }
-		return this[_observed].get(t)[x][y][a];
+		return this[_observed].get(t, x, y, a);
 	}
 
 	getGuess(t, x, y, a) {
-		if (!chainIsDefined(this[_guess], x, y, a)) { return unknown }
-		return this[_guess][x][y][a];
+		return this[_guess].get(x, y, a);
 	}
 
 	observe(t, x, y, a) {
 		let reality = this.reality.getReality(t, x, y, a);
 		if (reality === unknown) { return }
+		let tt;
 		if ([ unknown, reality ].includes( this.getKnown(t, x, y, a) )) {
-			this[_scaffoldObserved](t, x, y, a);
-			this[_scaffoldGuess]   (t, x, y, a);
-			this[_observed].get(t)[x][y][a] =
-			this[_guess]          [x][y][a] = reality;
-			return t;
+			tt = t;
 		} else {
-			console.log('PARADOX:', this[_observed].get(t)[x][y][a], reality);
-			let t2 = t.branch;
-			this[_scaffoldObserved](t2, x, y, a);
-			this[_scaffoldGuess]   (t2, x, y, a);
-			this[_observed].get(t2)[x][y][a] =
-			this[_guess]           [x][y][a] = reality;
-			return t2;
+			console.log('PARADOX:', this[_observed].get(t, x, y, a), reality);
+			tt = t.branch();
 		}
+		this[_observed].set(tt, x, y, a, reality);
+		this[_guess]   .set(    x, y, a, reality);
+		return tt;
 	}
 
 	branchesOf(t) { return t.prev.successors }
@@ -67,7 +48,8 @@ export class Observer {
 	tile(t, x, y) {
 		return {
 			getKnown: (a)    => { return this.getKnown(t, x, y, a)    },
-			getGuess: (a)    => { return this.getGuess(t, x, y, a)    }
+			getGuess: (a)    => { return this.getGuess(t, x, y, a)    },
+			t, x, y
 		};
 	}
 

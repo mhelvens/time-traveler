@@ -1,8 +1,9 @@
-import {unknown, nothing, terrain} from './symbols.es6.js';
-import Grid                        from './Grid.es6.js';
-import {randomElement, defOr}      from './util.es6.js';
-import {Observer}                  from './Observer.es6.js';
-import Time                        from './Time.es6.js';
+import {unknown, nothing, terrain}       from './symbols.es6.js';
+import Grid                              from './Grid.es6.js';
+import DeepMap                           from './DeepMap.es6.js';
+import {randomElement, defOr, isDefined} from './util.es6.js';
+import {Observer}                        from './Observer.es6.js';
+import Time                              from './Time.es6.js';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -53,6 +54,7 @@ const fieldOfVision = new Grid(`
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const _successorData = Symbol('_successorData');
+const _observables   = Symbol('_observables');
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -76,7 +78,8 @@ export default class Player {
 			x:   x   || 0,
 			y:   y   || 0,
 			d:   d   || 'right',
-			ai:  ai  || false
+			ai:  ai  || false,
+			[_observables]: new DeepMap({ depth: 4, defaultValue: unknown })
 		});
 		this.putInSpaceTime();
 	}
@@ -131,9 +134,13 @@ export default class Player {
 		});
 	}
 
+	observable(...coords) {
+		return this[_observables].get(...coords);
+	}
+
 	putInSpaceTime() {
 		let thisxy = [this.x, this.y];
-		const coords = () => [this.t, ...thisxy];
+		let coords = () => [this.t, ...thisxy];
 
 		/* place this player in reality */
 		this.reality.setReality(...coords(), 'occupant', this);
@@ -142,15 +149,20 @@ export default class Player {
 		// note that this may change this.t, if the player finds himself in another time-branch
 		this.t = this.observer.observe(...coords(), 'occupant');
 		/*    */ this.observer.observe(...coords(), 'terrain' );
+		this[_observables].set(...coords(), 'occupant', this.observer.getKnown(...coords(), 'occupant'));
+		this[_observables].set(...coords(), 'terrain',  this.observer.getKnown(...coords(), 'terrain' ));
 
 		/* the player observes a bunch of squares inside his field of vision */
 		fieldOfVision.anchorXY(...thisxy).anchorD(this.d).forEach((x, y) => {
 			line(...thisxy, x, y, (ix, iy) => {
 				if (!fieldOfVision.get(ix, iy))     { return false }
 				if (ix === this.x && iy === this.y) { return true  }
-				this.observer.observe(this.t, ix, iy, 'terrain' );
-				this.observer.observe(this.t, ix, iy, 'occupant');
-				return (this.observer.getKnown(this.t, ix, iy, 'terrain') !== terrain.wall);
+				let coords = [this.t, ix, iy];
+				this.observer.observe(...coords, 'terrain' );
+				this.observer.observe(...coords, 'occupant');
+				this[_observables].set(...coords, 'terrain',  this.observer.getKnown(...coords, 'terrain' ));
+				this[_observables].set(...coords, 'occupant', this.observer.getKnown(...coords, 'occupant'));
+				return (this.observer.getKnown(...coords, 'terrain') !== terrain.wall);
 				// TODO: ^ generalize to 'tile does not obscure vision'
 			});
 		});
