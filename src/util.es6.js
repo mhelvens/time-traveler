@@ -1,12 +1,11 @@
-function extractExpression(fn) {
-	console.log(fn.toString());
-	let match = fn.toString().match(/function\s*\(.*?\)\s*\{\s*return\s*(.*?)\s*?;\s*\}/);
-	if (!match) { match = fn.toString().match(/function\s*\(.*?\)\s*\{\s*(.*?)\s*\}/) }
-	if (!match) { return null }
-	return match[1];
-}
-
 export function assert(a) {
+	function extractExpression(fn) {
+		console.log(fn.toString());
+		let match = fn.toString().match(/function\s*\(.*?\)\s*\{\s*return\s*(.*?)\s*?;\s*\}/);
+		if (!match) { match = fn.toString().match(/function\s*\(.*?\)\s*\{\s*(.*?)\s*\}/) }
+		if (!match) { return null }
+		return match[1];
+	}
 	let result;
 	try {
 		result = a();
@@ -56,3 +55,22 @@ export function range(from, to) {
 	for (let i = from; i < to; ++i) { result.push(i) }
 	return result;
 }
+
+export function directedVision([x0, y0], [x1, y1], cb) {
+	/* Bresenham line algorithm */
+	let dx = Math.abs(x1-x0);
+	let dy = Math.abs(y1-y0);
+	let sx = (x0 < x1) ? 1 : -1;
+	let sy = (y0 < y1) ? 1 : -1;
+	let err = dx-dy;
+	while(true){
+		let passThrough = cb(x0, y0);
+		if (!passThrough)       { break }
+		if (x0===x1 && y0===y1) { break }
+		let e2 = 2*err;
+		if (e2 >-dy){ err -= dy; x0  += sx; }
+		if (e2 < dx){ err += dx; y0  += sy; }
+	}
+}
+
+export const sw = (val) => (map) => ( (val in map) ? map[val] : map.default );

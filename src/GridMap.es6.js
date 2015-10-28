@@ -4,8 +4,7 @@ const _aX   = Symbol('_aX');
 const _aY   = Symbol('_aY');
 const _aRow = Symbol('_aRow');
 const _aCol = Symbol('_aCol');
-const _iD   = Symbol('_iD');
-const _aD   = Symbol('_aD');
+const _aDir = Symbol('_aDir');
 
 
 //
@@ -13,50 +12,45 @@ const _aD   = Symbol('_aD');
 //
 export default class GridMap {
 
-	toXY(row, col) {
+	constructor() {
+		this[_aX]   = 0;
+		this[_aY]   = 0;
+		this[_aRow] = 0;
+		this[_aCol] = 0;
+		this[_aDir] = 'right';
+	}
+
+	toXY(row, col, dir) {
 		let [x, y] = rotateFromTo(
 			col - this[_aCol],
 			row - this[_aRow],
-			this[_iD],
-			this[_aD]
+			this[_aDir],
+			dir || this[_aDir]
 		);
 		return [
 			x + this[_aX],
 			y + this[_aY]
 		];
-
-		//let x = col + this[_aX] - this[_aCol];
-		//let y = row + this[_aY] - this[_aRow];
-		//return [x, y];
 	}
 
-	toRowCol(x, y) {
-		let [xx, yy] = rotateFromTo(
+	toRowCol(x, y, dir) {
+		let [_x, _y] = rotateFromTo(
 			x - this[_aX],
 			y - this[_aY],
-			this[_aD],
-			this[_iD]
+			dir || this[_aDir],
+			this[_aDir]
 		);
 		return [
-			(yy + this[_aRow]),
-			(xx + this[_aCol])
+			(_y + this[_aRow]),
+			(_x + this[_aCol])
 		];
 	}
 
-	constructor(initD = 'right') {
-		this[_aX] = 0;
-		this[_aY] = 0;
-		this[_aRow] = 0;
-		this[_aCol] = 0;
-		this[_iD] = initD;
-		this[_aD] = 'right';
-	}
-
-	anchorD(d) {
-		if (typeof d === 'undefined') {
-			return this[_aD];
+	anchorDir(dir) {
+		if (typeof dir === 'undefined') {
+			return this[_aDir];
 		} else {
-			this[_aD] = d;
+			this[_aDir] = dir;
 			return this;
 		}
 	}

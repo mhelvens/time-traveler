@@ -1,5 +1,5 @@
-import {abstractMethod} from './util.es6.js';
+export default class Thing {
 
-export class Thing {
-	successor() { abstractMethod('Thing', 'successor') }
+	successor() { return this }
+
 }

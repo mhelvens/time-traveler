@@ -3,19 +3,9 @@ import {unknown, nothing, terrain} from './symbols.es6.js';
 import Grid                        from './Grid.es6.js';
 import DeepMap                     from './DeepMap.es6.js';
 import {Reality}                   from './Reality.es6.js';
+import {realityMap}                from './config.es6.js';
 
-
-let initialMap = new Grid(`
-
-       #####         #####         #####
-#####         #####         #####         #####
-  #                                         #
-  #                    @                    #
-  #                                         #
-#####         #####         #####         #####
-       #####         #####         #####
-
-`, {
+let initialMap = new Grid(realityMap, {
 	anchor: '@',
 	'#': true,
 	' ': false,

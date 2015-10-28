@@ -8,9 +8,11 @@ import {Observer}                  from './Observer.es6.js';
 import Player                      from './Player.es6.js';
 import Frame                       from './Frame.es6.js';
 import Time                        from './Time.es6.js';
-
-const FRAME_WIDTH  = 21;
-const FRAME_HEIGHT = 21;
+import {
+	frameSize,
+	centerOnPlayer,
+	showGrid
+} from './config.es6.js';
 
 riot.tag('world-map', `
 
@@ -45,8 +47,15 @@ riot.tag('world-map', `
         border: solid 1px gray;
     }
     table {
-        border: solid 1px black;
         border-spacing: 0;
+        border-width: 1px;
+        border-color: lightgray;
+        border-style: ${showGrid ? 'none solid solid none' : 'none'};
+    }
+    td {
+        border-width: 1px;
+        border-color: lightgray;
+        border-style: ${showGrid ? 'solid none none solid' : 'none'};
     }
     td, .tile-square {
         width:      32px;
@@ -95,26 +104,24 @@ riot.tag('world-map', `
 
 	/* the player */
 	this.player = new Player({
+		controller: new Player.KeyboardController(),
 		reality,
 		observer,
-		t: t0,
-		x: 0,
-		y: 0,
-		d: 'right'
+		age: 0,
+		t:   t0,
+		x:   0,
+		y:   0,
+		dir: 'right'
 	});
 
     /* the frame: a viewing window on spacetime as observed by the player */
     this.frame = new Frame({
-	    width:    FRAME_WIDTH,
-	    height:   FRAME_HEIGHT,
+	    width:    frameSize[0],
+	    height:   frameSize[1],
         observer: observer,
-        t: t0
+        t:        t0
     });
-    const centerAround = ({x, y}) => {
-	    this.frame.left = x - Math.floor(FRAME_WIDTH  / 2);
-        this.frame.top  = y - Math.floor(FRAME_HEIGHT / 2);
-    };
-    centerAround(this.player);
+	this.frame.anchorXY(this.player.x, this.player.y);
 
 	/* a function to set the frame's time (show alternating branches for paradox) */
 	const setFrameTime = (() => {
@@ -136,12 +143,13 @@ riot.tag('world-map', `
 
     /* move the player (and time) with the arrow keys */
     $(document).keydown((event) => {
-		/* send input to player */
-		let inputUsed = this.player.receiveInput(event);
 
-		/* if the input was not used, exit; otherwise, hijack the event and continue */
-		if (!inputUsed) { return                 }
-		else            { event.preventDefault() }
+	    /* provide input to player controller */ // TODO: provide input to all dynamic entities
+	    let inputUsed = this.player.controller.acceptInput(event);
+
+	    /* react based on whether the input was used */
+	    if (inputUsed) { event.preventDefault() }
+	    else           { return                 }
 
 		/* get player successor */
 		this.player = this.player.successor();
@@ -152,18 +160,17 @@ riot.tag('world-map', `
 		setFrameTime(this.player.t);
 
 		/* center the frame around the player */
-		centerAround(this.player);
+	    if (centerOnPlayer) { this.frame.anchorXY(this.player.x, this.player.y) }
 
 		/* update the visualization */
 		this.update();
     });
 
     /* definitions to use in the HTML template */
-	this.rows = range(0, FRAME_HEIGHT);
-	this.cols = range(0, FRAME_WIDTH);
-	this.tile = (row, col) => observer.tile(this.frame.t, this.frame.getX(col), this.frame.getY(row));
+	this.rows = range(0, frameSize[1]);
+	this.cols = range(0, frameSize[0]);
     this.terrainImg = (row, col) => {
-	    let tile = this.tile(row, col);
+	    let tile = this.frame.tile(row, col);
 		let known = tile.getKnown('terrain');
 		let guess = tile.getGuess('terrain');
 	    for (let src of [known, guess]) {
@@ -175,18 +182,16 @@ riot.tag('world-map', `
 	    if (guess === unknown) { return null }
     };
     this.occupantImg = (row, col) => {
-	    let tile = this.tile(row, col);
-		let known = tile.getKnown('occupant');
+		let known = this.frame.tile(row, col).getKnown('occupant');
 	    // we do not indicate any 'guess' of occupancy in the absence of knowledge
 	    if (known instanceof Player) { return require('./img/archaeologist.png') }
     };
 	this.occupantAge = (row, col) => {
-		let tile = this.tile(row, col);
-		let known = tile.getKnown('occupant');
+		let known = this.frame.tile(row, col).getKnown('occupant');
 		if (known instanceof Player) { return known.age }
 	};
     this.tileOpacity = (row, col) => {
-	    let tile = this.tile(row, col);
+	    let tile = this.frame.tile(row, col);
 	    let observed = this.player.observable(tile.t, tile.x, tile.y, 'terrain');
 		let known = tile.getKnown('terrain');
 		let guess = tile.getGuess('terrain');

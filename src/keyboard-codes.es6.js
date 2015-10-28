@@ -1,7 +1,5 @@
-export const key = {
-	BACKSPACE: 8,
-	LEFT:     37,
-	UP:       38,
-	RIGHT:    39,
-	DOWN:     40
-};
+export const BACKSPACE =  8;
+export const LEFT      = 37;
+export const UP        = 38;
+export const RIGHT     = 39;
+export const DOWN      = 40;

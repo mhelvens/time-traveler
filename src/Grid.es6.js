@@ -12,7 +12,7 @@ export default class Grid extends GridMap {
 	constructor(ascii, options = {}) {
 		super();
 		options = Object.assign({ ' ': null, anchor: '@', direction: 'right' }, options);
-		this.anchorD(options.direction);
+		this.anchorDir(options.direction);
 		this[_e] = options[' '];
 		this[_grid] = [[]];
 		let row = 0, col = 0;
@@ -24,6 +24,7 @@ export default class Grid extends GridMap {
 				col = -1;
 			} else {
 				if (c === options.anchor) {
+					if (anchorSet) { throw new Error(`This grid contains more than one anchor '${options.anchor}'.`) }
 					this.anchorRowCol(row, col);
 					anchorSet = true;
 				}
@@ -34,18 +35,19 @@ export default class Grid extends GridMap {
 		if (!anchorSet) { throw new Error(`This grid does not contain an anchor '${options.anchor}'.`) }
 	}
 
-	get(x, y) {
-		let [row, col] = this.toRowCol(x, y);
+	get(x, y, dir) {
+		let [row, col] = this.toRowCol(x, y, dir);
 		return (this[_grid][row] && typeof this[_grid][row][col] !== 'undefined')
 			? this[_grid][row][col]
 			: this[_e];
 	}
 
-	forEach(cb) {
+	forEach(dir, cb) {
+		if (typeof dir === 'function') { [cb,dir] = [dir,cb] }
 		for (let row = 0; row < this[_grid].length; ++row) {
 			for (let col = 0; col < this[_grid][row].length; ++col) {
-				let [x, y] = this.toXY(row, col);
-				cb(x, y, this.get(x, y));
+				let [x, y] = this.toXY(row, col, dir);
+				cb(x, y, this.get(x, y, dir));
 			}
 		}
 		return this;
