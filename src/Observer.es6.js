@@ -1,6 +1,6 @@
 import Time                                   from './Time.es6.js';
 import DeepMap                                from './DeepMap.es6.js';
-import {unknown, nothing, terrain}            from './symbols.es6.js';
+import unknown                                from './things/unknown.es6.js';
 import {last, chainIsDefined, abstractMethod} from './util.es6.js';
 
 const _scaffoldObserved = Symbol('_scaffoldObserved');

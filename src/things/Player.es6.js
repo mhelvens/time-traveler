@@ -1,30 +1,29 @@
 import $ from 'jquery';
 
-import Grid         from './Grid.es6.js';
-import DeepMap      from './DeepMap.es6.js';
-import {Observer}   from './Observer.es6.js';
-import Time         from './Time.es6.js';
-import {flashlight} from './config.es6.js';
+import Grid         from '../Grid.es6.js';
+import DeepMap      from '../DeepMap.es6.js';
+import {Observer}   from '../Observer.es6.js';
+import Time         from '../Time.es6.js';
+import {flashlight} from '../config.es6.js';
 import Thing        from './Thing.es6.js';
+import unknown      from './unknown.es6.js';
+import Nothing      from './Nothing.es6.js';
+import Wall         from './Wall.es6.js';
+import Floor        from './Floor.es6.js';
 import {
 	BACKSPACE,
 	LEFT,
 	UP,
 	RIGHT,
 	DOWN
-} from './keyboard-codes.es6.js';
-import {
-	unknown,
-	nothing,
-	terrain
-} from './symbols.es6.js';
+} from '../keyboard-codes.es6.js';
 import {
 	randomElement,
 	defOr,
 	isDefined,
 	directedVision,
 	sw
-} from './util.es6.js';
+} from '../util.es6.js';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -73,7 +72,7 @@ export default class Player extends Thing {
 	successor({controller: nextController} = {}) {
 		let {t, x, y, dir, controller} = this.controller.apply(this, { nextController });
 		this.observer.observe(t, x, y, 'terrain');
-		if (this.observer.getKnown(this.t, x, y, 'terrain') === terrain.wall) {
+		if (this.observer.getKnown(this.t, x, y, 'terrain') instanceof Wall) {
 			// TODO: generalize to 'stop for blocking square' rather than 'block for wall'
 			({x, y} = this);
 		}
@@ -114,7 +113,7 @@ export default class Player extends Thing {
 				this.observer.observe(...subjectCoords, 'occupant');
 				this[_observables].set(...subjectCoords, 'terrain',  this.observer.getKnown(...subjectCoords, 'terrain' ));
 				this[_observables].set(...subjectCoords, 'occupant', this.observer.getKnown(...subjectCoords, 'occupant'));
-				return (this.observer.getKnown(...subjectCoords, 'terrain') !== terrain.wall);
+				return !(this.observer.getKnown(...subjectCoords, 'terrain') instanceof Wall);
 				// TODO: ^ generalize to 'tile does not obscure vision' (rather than 'tile is a wall')
 			});
 		});

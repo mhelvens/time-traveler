@@ -1,13 +1,16 @@
 import $    from 'jquery';
 import riot from 'riot';
 
-import {chainIsDefined, range}     from './util.es6.js';
-import {unknown, nothing, terrain} from './symbols.es6.js';
-import {ExampleReality}            from './ExampleReality.es6.js';
-import {Observer}                  from './Observer.es6.js';
-import Player                      from './Player.es6.js';
-import Frame                       from './Frame.es6.js';
-import Time                        from './Time.es6.js';
+import {chainIsDefined, range} from './util.es6.js';
+import unknown                 from './things/unknown.es6.js';
+import Nothing                 from './things/Nothing.es6.js';
+import Wall                    from './things/Wall.es6.js';
+import Floor                   from './things/Floor.es6.js';
+import {ExampleReality}        from './ExampleReality.es6.js';
+import {Observer}              from './Observer.es6.js';
+import Player                  from './things/Player.es6.js';
+import Frame                   from './Frame.es6.js';
+import Time                    from './Time.es6.js';
 import {
 	frameSize,
 	centerOnPlayer,
@@ -174,10 +177,8 @@ riot.tag('world-map', `
 		let known = tile.getKnown('terrain');
 		let guess = tile.getGuess('terrain');
 	    for (let src of [known, guess]) {
-		    switch (src) {
-			    case terrain.floor: return (known === guess) ? require('./img/floor-lit.png') : require('./img/floor.png');
-			    case terrain.wall:  return require('./img/wall.png');
-		    }
+		    if (src instanceof Floor) return (known === guess) ? require('./img/floor-lit.png') : require('./img/floor.png');
+		    if (src instanceof Wall)  return require('./img/wall.png');
 	    }
 	    if (guess === unknown) { return null }
     };

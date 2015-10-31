@@ -1,9 +1,12 @@
-import {chainIsDefined}            from './util.es6.js';
-import {unknown, nothing, terrain} from './symbols.es6.js';
-import Grid                        from './Grid.es6.js';
-import DeepMap                     from './DeepMap.es6.js';
-import {Reality}                   from './Reality.es6.js';
-import {realityMap}                from './config.es6.js';
+import {chainIsDefined} from './util.es6.js';
+import unknown          from './things/unknown.es6.js';
+import Nothing          from './things/Nothing.es6.js';
+import Wall             from './things/Wall.es6.js';
+import Floor            from './things/Floor.es6.js';
+import Grid             from './Grid.es6.js';
+import DeepMap          from './DeepMap.es6.js';
+import {Reality}        from './Reality.es6.js';
+import {realityMap}     from './config.es6.js';
 
 let initialMap = new Grid(realityMap, {
 	anchor: '@',
@@ -30,9 +33,9 @@ export class ExampleReality extends Reality {
 			return this[_incursions].get(t, x, y, a);
 		} else { // standard map-layout with no occupants
 			switch (a) {
-				case 'occupant': { return nothing }
+				case 'occupant': { return new Nothing }
 				case 'terrain': {
-					return initialMap.get(x, y) ? terrain.wall : terrain.floor;
+					return initialMap.get(x, y) ? new Wall : new Floor;
 				}
 			}
 		}
