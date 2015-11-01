@@ -11,6 +11,13 @@ import Player                  from './things/Player.es6.js';
 import Frame                   from './Frame.es6.js';
 import Time                    from './Time.es6.js';
 import {
+	BACKSPACE,
+	LEFT,
+	UP,
+	RIGHT,
+	DOWN
+} from './keyboard-codes.es6.js';
+import {
 	frameSize,
 	centerOnPlayer,
 	showGrid
@@ -19,8 +26,8 @@ import {
 riot.tag('world-map', `
 
     <div class="info">
-        <span><b>world:  </b>t   = {frame.t.time}</span>
-        <span><b>player: </b>age = {player.age}  </span>
+        <span><b>world:  </b>{frame.t.time}</span>
+        <span><b>player: </b>{player.age}  </span>
     </div>
     <table>
         <tr each="{ row in rows }">
@@ -34,19 +41,89 @@ riot.tag('world-map', `
             </td>
         </tr>
     </table>
+    <div class="info">
+        <span>
+		    <kbd class="left  { active: leftDown  }" onmousedown="{ leftMouseDown  }" onmouseup="{ leftMouseUp  }"> ◀ </kbd>
+		    <kbd class="up    { active: upDown    }" onmousedown="{ upMouseDown    }" onmouseup="{ upMouseUp    }"> ▲ </kbd>
+		    <kbd class="down  { active: downDown  }" onmousedown="{ downMouseDown  }" onmouseup="{ downMouseUp  }"> ▼ </kbd>
+		    <kbd class="right { active: rightDown }" onmousedown="{ rightMouseDown }" onmouseup="{ rightMouseUp }"> ▶ </kbd><br />
+		    walk
+	    </span>
+        <span>
+	        <kbd class="backspace  { active: backspaceDown  }" onmousedown="{ backspaceMouseDown }" onmouseup="{ backspaceMouseUp }"> ← </kbd>
+	        <input class="time-travel-distance" type="number"
+	               value="{ player.controller.timeTravelDistance }"
+	               onchange="{ updateTimeTravelDistance }" /><br />
+		    time-travel
+	    </span>
+    </div>
 
 `, `
+
+	* {
+	    box-sizing: content-box;
+    }
+
+	kbd {
+		border: solid 1px gray;
+		border-radius: 3px;
+		display: inline-block;
+		height:      20px;
+		min-height:  20px;
+		max-height:  20px;
+		width:       20px;
+		min-width:   20px;
+		max-width:   20px;
+		font-size:   16px;
+		line-height: 16px;
+		padding: 2px;
+		text-align: center;
+		cursor: pointer;
+		background-color: white;
+	    -webkit-touch-callout: none;
+	    -webkit-user-select: none;
+	    -khtml-user-select: none;
+	    -moz-user-select: none;
+	    -ms-user-select: none;
+	    user-select: none;
+	    position: relative;
+	}
+	kbd.backspace {
+		width:     60px;
+		min-width: 60px;
+		max-width: 60px;
+	}
+	kbd.active {
+		background-color: lightblue;
+	}
+	input.time-travel-distance {
+		border: solid 1px gray;
+		border-radius: 3px;
+		height:     20px;
+		min-height: 20px;
+		max-height: 20px;
+		width:      40px;
+		min-width:  40px;
+		max-width:  40px;
+		padding: 2px;
+		position: relative;
+		top: 1px;
+		margin-top: -1px;
+	}
 
     .world-map {
         display: inline-block;
     }
     div.info {
+        display: inline-block;
         margin: 4px 0px;
+        text-align: center;
     }
     div.info > span {
         display: inline-block;
-        padding: 2px 4px;
+        padding: 4px;
         border: solid 1px gray;
+        background-color: #eee;
     }
     table {
         border-spacing: 0;
@@ -143,6 +220,13 @@ riot.tag('world-map', `
 		}
 	})();
 
+
+	this.updateTimeTravelDistance = (e) => {
+		//console.log(e);
+		this.player.controller.timeTravelDistance = e.target.value;
+	};
+
+
     /* move the player (and time) with the arrow keys */
     $(document).keydown((event) => {
 
@@ -167,6 +251,27 @@ riot.tag('world-map', `
 		/* update the visualization */
 		this.update();
     });
+
+	[   ['left',      LEFT     ],
+		['up',        UP       ],
+		['down',      DOWN     ],
+		['right',     RIGHT    ],
+		['backspace', BACKSPACE]
+	].forEach(([name, code]) => {
+		this[`${name}Down`] = false;
+		$(document).keydown(({which}) => { if (which === code) { this[`${name}Down`] = true;  this.update() } });
+		$(document).keyup  (({which}) => { if (which === code) { this[`${name}Down`] = false; this.update() } });
+		this[`${name}MouseDown`] = () => {
+			var press = $.Event("keydown");
+			press.which = code;
+			$(document).trigger(press);
+		};
+		this[`${name}MouseUp`] = () => {
+			var press = $.Event("keyup");
+			press.which = code;
+			$(document).trigger(press);
+		};
+	});
 
     /* definitions to use in the HTML template */
 	this.rows = range(0, frameSize[1]);

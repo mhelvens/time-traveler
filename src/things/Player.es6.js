@@ -123,11 +123,16 @@ export default class Player extends Thing {
 Player.KeyboardController = class KeyboardController {
 
 	dt; dx; dy; dir;
+	timeTravelDistance;
+
+	constructor({timeTravelDistance} = {}) {
+		this.timeTravelDistance = defOr(timeTravelDistance, -2);
+	}
 
 	acceptInput(event) {
 		if (![BACKSPACE, LEFT, UP, RIGHT, DOWN].includes(event.which)) { return false }
 		this.dt = sw(event.which)({
-			[BACKSPACE]: -2,
+			[BACKSPACE]: this.timeTravelDistance,
 			default:     +1
 		});
 		[this.dir, this.dx, this.dy] = sw(event.which)({
@@ -142,7 +147,9 @@ Player.KeyboardController = class KeyboardController {
 		return true;
 	}
 
-	apply(prev, { nextController = new Player.KeyboardController() } = {}) {
+	apply(prev, { nextController = new Player.KeyboardController({
+		timeTravelDistance: this.timeTravelDistance
+	}) } = {}) {
 		return {
 			t:          prev.t.plus(this.dt),
 			x:          prev.x    + this.dx,
