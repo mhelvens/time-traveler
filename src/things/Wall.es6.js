@@ -8,4 +8,6 @@ export default class Wall extends Thing {
 		if (!singleton) { singleton = this }
 		return singleton;
 	}
+	get blocking()  { return true }
+	get obscuring() { return true }
 }

@@ -70,9 +70,7 @@ export default class Player extends Thing {
 
 	successor({controller: nextController} = {}) {
 		let {t, x, y, dir, controller} = this.controller.apply(this, { nextController });
-		this.observer.observe(t, x, y, 'terrain');
-		if (this.observer.getKnown(this.t, x, y, 'terrain') instanceof Wall) {
-			// TODO: generalize to 'stop for blocking square' rather than 'block for wall'
+		if (this.observer.observe(this.t, x, y, 'blocking')) {
 			({x, y} = this);
 		}
 		return new Player({
@@ -108,15 +106,15 @@ export default class Player extends Thing {
 				if (!fieldOfVision.get(ix, iy, this.dir)) { return false }
 				if (ix === this.x && iy === this.y)       { return true  }
 				let subjectCoords = [this.t, ix, iy];
-				this.observer.observe(...subjectCoords, 'terrain' );
-				this.observer.observe(...subjectCoords, 'occupant');
-				this[_observables].set(...subjectCoords, 'terrain',  this.observer.getKnown(...subjectCoords, 'terrain' ));
-				this[_observables].set(...subjectCoords, 'occupant', this.observer.getKnown(...subjectCoords, 'occupant'));
-				return !(this.observer.getKnown(...subjectCoords, 'terrain') instanceof Wall);
-				// TODO: ^ generalize to 'tile does not obscure vision' (rather than 'tile is a wall')
+				this[_observables].set(...subjectCoords, 'terrain',   this.observer.observe(...subjectCoords, 'terrain' ));
+				this[_observables].set(...subjectCoords, 'occupant',  this.observer.observe(...subjectCoords, 'occupant'));
+				this[_observables].set(...subjectCoords, 'obscuring', this.observer.observe(...subjectCoords, 'obscuring'));
+				return !(this.observer.getKnown(...subjectCoords, 'obscuring'));
 			});
 		});
 	}
+
+	get blocking() { return true }
 
 }
 

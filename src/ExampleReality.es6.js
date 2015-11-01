@@ -25,6 +25,8 @@ export class ExampleReality extends Reality {
 
 	setReality(t, x, y, a, val) {
 		this[_incursions].set(t, x, y, a, val);
+		if (val.blocking)  { this[_incursions].set(t, x, y, 'blocking',  true) }
+		if (val.obscuring) { this[_incursions].set(t, x, y, 'obscuring', true) }
 	}
 
 	getReality(t, x, y, a) {
@@ -32,10 +34,10 @@ export class ExampleReality extends Reality {
 			return this[_incursions].get(t, x, y, a);
 		} else { // standard map-layout with no occupants
 			switch (a) {
-				case 'occupant': { return new Nothing }
-				case 'terrain': {
-					return initialMap.get(x, y) ? new Wall : new Floor;
-				}
+				case 'occupant':  { return new Nothing                                   }
+				case 'terrain':   { return initialMap.get(x, y) ? new Wall : new Floor   }
+				case 'blocking':  { return this.getReality(t, x, y, 'terrain').blocking  }
+				case 'obscuring': { return this.getReality(t, x, y, 'terrain').obscuring }
 			}
 		}
 	}
