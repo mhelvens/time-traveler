@@ -885,6 +885,16 @@
 			value: function successor() {
 				return this;
 			}
+		}, {
+			key: "blocking",
+			get: function get() {
+				return false;
+			}
+		}, {
+			key: "obscuring",
+			get: function get() {
+				return false;
+			}
 		}]);
 	
 		return Thing;
@@ -1587,6 +1597,8 @@
 		value: true
 	});
 	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -1613,6 +1625,18 @@
 			}
 			return singleton;
 		}
+	
+		_createClass(Wall, [{
+			key: 'blocking',
+			get: function get() {
+				return true;
+			}
+		}, {
+			key: 'obscuring',
+			get: function get() {
+				return false;
+			}
+		}]);
 	
 		return Wall;
 	})(_ThingEs6Js2['default']);
@@ -16677,6 +16701,12 @@
 			key: 'setReality',
 			value: function setReality(t, x, y, a, val) {
 				this[_incursions].set(t, x, y, a, val);
+				if (val.blocking) {
+					this[_incursions].set(t, x, y, 'blocking', true);
+				}
+				if (val.obscuring) {
+					this[_incursions].set(t, x, y, 'obscuring', true);
+				}
 			}
 		}, {
 			key: 'getReality',
@@ -16693,6 +16723,14 @@
 						case 'terrain':
 							{
 								return initialMap.get(x, y) ? new _thingsWallEs6Js2['default']() : new _thingsFloorEs6Js2['default']();
+							}
+						case 'blocking':
+							{
+								return this.getReality(t, x, y, 'terrain').blocking;
+							}
+						case 'obscuring':
+							{
+								return this.getReality(t, x, y, 'terrain').obscuring;
 							}
 					}
 				}
@@ -17008,9 +17046,7 @@
 				var dir = _controller$apply.dir;
 				var controller = _controller$apply.controller;
 	
-				this.observer.observe(t, x, y, 'terrain');
-				if (this.observer.getKnown(this.t, x, y, 'terrain') instanceof _WallEs6Js2['default']) {
-					// TODO: generalize to 'stop for blocking square' rather than 'block for wall'
+				if (this.observer.observe(this.t, x, y, 'blocking')) {
 					x = this.x;
 					y = this.y;
 				}
@@ -17063,7 +17099,7 @@
 					}
 	
 					(0, _utilEs6Js.directedVision)(thisXY, xy, function (ix, iy) {
-						var _observer5, _observer6, _observables5, _observer7, _observables6, _observer8, _observer9;
+						var _observables5, _observer5, _observables6, _observer6, _observables7, _observer7, _observer8;
 	
 						if (!fieldOfVision.get(ix, iy, _this.dir)) {
 							return false;
@@ -17072,14 +17108,17 @@
 							return true;
 						}
 						var subjectCoords = [_this.t, ix, iy];
-						(_observer5 = _this.observer).observe.apply(_observer5, subjectCoords.concat(['terrain']));
-						(_observer6 = _this.observer).observe.apply(_observer6, subjectCoords.concat(['occupant']));
-						(_observables5 = _this[_observables]).set.apply(_observables5, subjectCoords.concat(['terrain', (_observer7 = _this.observer).getKnown.apply(_observer7, subjectCoords.concat(['terrain']))]));
-						(_observables6 = _this[_observables]).set.apply(_observables6, subjectCoords.concat(['occupant', (_observer8 = _this.observer).getKnown.apply(_observer8, subjectCoords.concat(['occupant']))]));
-						return !((_observer9 = _this.observer).getKnown.apply(_observer9, subjectCoords.concat(['terrain'])) instanceof _WallEs6Js2['default']);
-						// TODO: ^ generalize to 'tile does not obscure vision' (rather than 'tile is a wall')
+						(_observables5 = _this[_observables]).set.apply(_observables5, subjectCoords.concat(['terrain', (_observer5 = _this.observer).observe.apply(_observer5, subjectCoords.concat(['terrain']))]));
+						(_observables6 = _this[_observables]).set.apply(_observables6, subjectCoords.concat(['occupant', (_observer6 = _this.observer).observe.apply(_observer6, subjectCoords.concat(['occupant']))]));
+						(_observables7 = _this[_observables]).set.apply(_observables7, subjectCoords.concat(['obscuring', (_observer7 = _this.observer).observe.apply(_observer7, subjectCoords.concat(['obscuring']))]));
+						return !(_observer8 = _this.observer).getKnown.apply(_observer8, subjectCoords.concat(['obscuring']));
 					});
 				});
+			}
+		}, {
+			key: 'blocking',
+			get: function get() {
+				return true;
 			}
 		}]);
 	
