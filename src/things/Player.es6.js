@@ -6,7 +6,6 @@ import {Observer}   from '../Observer.es6.js';
 import Time         from '../Time.es6.js';
 import {flashlight} from '../config.es6.js';
 import Thing        from './Thing.es6.js';
-import unknown      from './unknown.es6.js';
 import Nothing      from './Nothing.es6.js';
 import Wall         from './Wall.es6.js';
 import Floor        from './Floor.es6.js';
@@ -64,7 +63,7 @@ export default class Player extends Thing {
 			x:          options.x   || 0,
 			y:          options.y   || 0,
 			dir:        options.dir || 'right',
-			[_observables]: new DeepMap({ depth: 4, defaultValue: unknown })
+			[_observables]: new DeepMap({ depth: 4 })
 		});
 		this.putInSpaceTime();
 	}

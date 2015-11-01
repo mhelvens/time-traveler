@@ -2,7 +2,6 @@ import $    from 'jquery';
 import riot from 'riot';
 
 import {chainIsDefined, range} from './util.es6.js';
-import unknown                 from './things/unknown.es6.js';
 import Nothing                 from './things/Nothing.es6.js';
 import Wall                    from './things/Wall.es6.js';
 import Floor                   from './things/Floor.es6.js';
@@ -180,7 +179,7 @@ riot.tag('world-map', `
 		    if (src instanceof Floor) return (known === guess) ? require('./img/floor-lit.png') : require('./img/floor.png');
 		    if (src instanceof Wall)  return require('./img/wall.png');
 	    }
-	    if (guess === unknown) { return null }
+	    if (!guess) { return null }
     };
     this.occupantImg = (row, col) => {
 		let known = this.frame.tile(row, col).getKnown('occupant');
@@ -196,10 +195,10 @@ riot.tag('world-map', `
 	    let observed = this.player.observable(tile.t, tile.x, tile.y, 'terrain');
 		let known = tile.getKnown('terrain');
 		let guess = tile.getGuess('terrain');
-	    /**/ if (observed !== unknown) { return 1    }
-		else if (known    !== unknown) { return 0.75 }
-		else if (guess    !== unknown) { return 0.5  }
-	    else                           { return 0    }
+	    /**/ if (observed) { return 1    }
+		else if (known   ) { return 0.75 }
+		else if (guess   ) { return 0.5  }
+	    else               { return 0    }
     };
 
 });

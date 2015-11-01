@@ -1,6 +1,5 @@
 import Time                                   from './Time.es6.js';
 import DeepMap                                from './DeepMap.es6.js';
-import unknown                                from './things/unknown.es6.js';
 import {last, chainIsDefined, abstractMethod} from './util.es6.js';
 
 const _scaffoldObserved = Symbol('_scaffoldObserved');
@@ -15,8 +14,8 @@ const _guess            = Symbol('_guess');
 export class Observer {
 
 	constructor(reality) {
-		this[_observed] = new DeepMap({ depth: 4, defaultValue: unknown });
-		this[_guess]    = new DeepMap({ depth: 3, defaultValue: unknown });
+		this[_observed] = new DeepMap({ depth: 4 });
+		this[_guess]    = new DeepMap({ depth: 3 });
 		this.reality    = reality;
 	}
 
@@ -30,9 +29,9 @@ export class Observer {
 
 	observe(t, x, y, a) {
 		let reality = this.reality.getReality(t, x, y, a);
-		if (reality === unknown) { return }
+		if (!reality) { return }
 		let tt;
-		if ([ unknown, reality ].includes( this.getKnown(t, x, y, a) )) {
+		if (this.getKnown(t, x, y, a) === reality || !this.getKnown(t, x, y, a)) {
 			tt = t;
 		} else {
 			console.log('PARADOX:', this[_observed].get(t, x, y, a), reality);

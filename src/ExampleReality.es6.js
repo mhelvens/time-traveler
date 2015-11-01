@@ -1,5 +1,4 @@
 import {chainIsDefined} from './util.es6.js';
-import unknown          from './things/unknown.es6.js';
 import Nothing          from './things/Nothing.es6.js';
 import Wall             from './things/Wall.es6.js';
 import Floor            from './things/Floor.es6.js';
