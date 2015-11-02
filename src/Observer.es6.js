@@ -1,13 +1,10 @@
-import Time                                   from './Time.es6.js';
-import DeepMap                                from './DeepMap.es6.js';
-import {last, chainIsDefined, abstractMethod} from './util.es6.js';
+import Time                   from './Time.es6.js';
+import DeepMap                from './DeepMap.es6.js';
+import {last, chainIsDefined} from './util.es6.js';
 
-const _scaffoldObserved = Symbol('_scaffoldObserved');
-const _scaffoldGuess    = Symbol('_scaffoldGuess');
 const _observed         = Symbol('_observed');
 const _guess            = Symbol('_guess');
 
-//
 // The base class for progressively specifying the content of a
 // 4-dimensional reality as it is observed.
 //
