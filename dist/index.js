@@ -1313,12 +1313,9 @@
 	
 	var _utilEs6Js = __webpack_require__(17);
 	
-	var _scaffoldObserved = Symbol('_scaffoldObserved');
-	var _scaffoldGuess = Symbol('_scaffoldGuess');
 	var _observed = Symbol('_observed');
 	var _guess = Symbol('_guess');
 	
-	//
 	// The base class for progressively specifying the content of a
 	// 4-dimensional reality as it is observed.
 	//
@@ -2578,6 +2575,10 @@
 	});
 	var BACKSPACE = 8;
 	exports.BACKSPACE = BACKSPACE;
+	var SHIFT = 16;
+	exports.SHIFT = SHIFT;
+	var CTRL = 17;
+	exports.CTRL = CTRL;
 	var LEFT = 37;
 	exports.LEFT = LEFT;
 	var UP = 38;
@@ -17168,17 +17169,16 @@
 			value: function apply(prev) {
 				var _ref3 = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	
-				var _ref3$nextController = _ref3.nextController;
-				var nextController = _ref3$nextController === undefined ? new Player.KeyboardController({
-					timeTravelDistance: this.timeTravelDistance
-				}) : _ref3$nextController;
+				var nextController = _ref3.nextController;
 	
 				return {
 					t: prev.t.plus(this.dt),
 					x: prev.x + this.dx,
 					y: prev.y + this.dy,
 					dir: this.dir || prev.dir,
-					controller: nextController
+					controller: nextController || new Player.KeyboardController({
+						timeTravelDistance: this.timeTravelDistance
+					})
 				};
 			}
 		}]);
@@ -17240,6 +17240,8 @@
 	
 	var _riot2 = _interopRequireDefault(_riot);
 	
+	//import './keys.css';
+	
 	var _utilEs6Js = __webpack_require__(17);
 	
 	var _thingsNothingEs6Js = __webpack_require__(56);
@@ -17274,7 +17276,7 @@
 	
 	var _configEs6Js = __webpack_require__(54);
 	
-	_riot2['default'].tag('world-map', '\n\n    <div class="info">\n        <span><b>world:  </b>{frame.t.time}</span>\n        <span><b>player: </b>{player.age}  </span>\n    </div>\n    <table>\n        <tr each="{ row in rows }">\n            <td each="{ col in cols }" style="background-color: black">\n                <div class="tile-square" style="opacity: { tileOpacity(row, col) }">\n\t                <div class="tile-square" style="background: url({ terrainImg(row, col) })"></div>\n\t                <div class="tile-square center-content" style="background: url({ occupantImg(row, col) })" if="{ occupantImg(row, col) }">\n\t                    <span class="age-indicator">{ occupantAge(row, col) }</span>\n\t                </div>\n                </div>\n            </td>\n        </tr>\n    </table>\n    <div class="info">\n        <span>\n\t\t    <kbd class="left  { active: leftDown  }" onmousedown="{ leftMouseDown  }" onmouseup="{ leftMouseUp  }"> ◀ </kbd>\n\t\t    <kbd class="up    { active: upDown    }" onmousedown="{ upMouseDown    }" onmouseup="{ upMouseUp    }"> ▲ </kbd>\n\t\t    <kbd class="down  { active: downDown  }" onmousedown="{ downMouseDown  }" onmouseup="{ downMouseUp  }"> ▼ </kbd>\n\t\t    <kbd class="right { active: rightDown }" onmousedown="{ rightMouseDown }" onmouseup="{ rightMouseUp }"> ▶ </kbd><br />\n\t\t    walk\n\t    </span>\n        <span>\n\t        <kbd class="backspace  { active: backspaceDown  }" onmousedown="{ backspaceMouseDown }" onmouseup="{ backspaceMouseUp }"> ← </kbd>\n\t        <input class="time-travel-distance" type="number"\n\t               value="{ player.controller.timeTravelDistance }"\n\t               onchange="{ updateTimeTravelDistance }" /><br />\n\t\t    time-travel\n\t    </span>\n    </div>\n\n', '\n\n\t* {\n\t    box-sizing: content-box;\n    }\n\n\tkbd {\n\t\tborder: solid 1px gray;\n\t\tborder-radius: 3px;\n\t\tdisplay: inline-block;\n\t\theight:      20px;\n\t\tmin-height:  20px;\n\t\tmax-height:  20px;\n\t\twidth:       20px;\n\t\tmin-width:   20px;\n\t\tmax-width:   20px;\n\t\tfont-size:   16px;\n\t\tline-height: 16px;\n\t\tpadding: 2px;\n\t\ttext-align: center;\n\t\tcursor: pointer;\n\t\tbackground-color: white;\n\t    -webkit-touch-callout: none;\n\t    -webkit-user-select: none;\n\t    -khtml-user-select: none;\n\t    -moz-user-select: none;\n\t    -ms-user-select: none;\n\t    user-select: none;\n\t    position: relative;\n\t}\n\tkbd.backspace {\n\t\twidth:     60px;\n\t\tmin-width: 60px;\n\t\tmax-width: 60px;\n\t}\n\tkbd.active {\n\t\tbackground-color: lightblue;\n\t}\n\tinput.time-travel-distance {\n\t\tborder: solid 1px gray;\n\t\tborder-radius: 3px;\n\t\theight:     20px;\n\t\tmin-height: 20px;\n\t\tmax-height: 20px;\n\t\twidth:      40px;\n\t\tmin-width:  40px;\n\t\tmax-width:  40px;\n\t\tpadding: 2px;\n\t\tposition: relative;\n\t\ttop: 1px;\n\t\tmargin-top: -1px;\n\t}\n\n    .world-map {\n        display: inline-block;\n    }\n    div.info {\n        display: inline-block;\n        margin: 4px 0px;\n        text-align: center;\n    }\n    div.info > span {\n        display: inline-block;\n        padding: 4px;\n        border: solid 1px gray;\n        background-color: #eee;\n    }\n    table {\n        border-spacing: 0;\n        border-width: 1px;\n        border-color: lightgray;\n        border-style: ' + (_configEs6Js.showGrid ? 'none solid solid none' : 'none') + ';\n    }\n    td {\n        border-width: 1px;\n        border-color: lightgray;\n        border-style: ' + (_configEs6Js.showGrid ? 'solid none none solid' : 'none') + ';\n    }\n    td, .tile-square {\n        width:      32px;\n        height:     32px;\n        max-width:  32px;\n        max-height: 32px;\n        overflow: hidden;\n        margin:  0;\n        padding: 0;\n        text-align: center;\n    }\n    td {\n        position: relative;\n    }\n    div.tile-square {\n        position: absolute;\n        top:  0;\n        left: 0;\n    }\n    div.center-content {\n        display: flex;\n        align-items: flex-end;\n        justify-content: right;\n    }\n    span.age-indicator {\n        font-weight: bold;\n        color: white;\n        background-color: black;\n        padding: 0 2px;\n    }\n\n', '\n\n\tclass="world-map"\n\n', function (opts) {
+	_riot2['default'].tag('world-map', '\n\n\t<div class="flex-row" style="align-items: flex-start">\n\t\t<div style="border: solid 1px black">\n\t\t    <table>\n\t\t        <tr each="{ row in rows }">\n\t\t            <td each="{ col in cols }" style="background-color: black">\n\t\t                <div class="tile-square" style="opacity: { tileOpacity(row, col) }">\n\t\t\t                <div class="tile-square" style="background: url({ terrainImg(row, col) })"></div>\n\t\t\t                <div class="tile-square center-content" style="background: url({ occupantImg(row, col) })" if="{ occupantImg(row, col) }">\n\t\t\t                    <span class="age-indicator">{ occupantAge(row, col) }</span>\n\t\t\t                </div>\n\t\t                </div>\n\t\t            </td>\n\t\t        </tr>\n\t\t    </table>\n\t    </div>\n\t\t<div class="flex-col">\n\t\t    <div class="info flex-row"><b>world:  </b><span>{frame.t.time}</span></div>\n\t\t    <div class="info flex-row"><b>player: </b><span>{player.age}  </span></div>\n\t\t    <div class="info">\n\t\t        <b>walking</b>\n\t\t\t        <div class="flex-row" style="display: block; margin-top: 4px">\n\t\t\t\t\t    <kbd class="up    { active: upDown    }" onmousedown="{ upMouseDown    }" onmouseup="{ upMouseUp    }"> ▲ </kbd>\n\t\t\t        </div>\n\t\t\t        <div class="flex-row" style="display: block; margin-top: 4px">\n\t\t\t\t\t    <kbd class="left  { active: leftDown  }" onmousedown="{ leftMouseDown  }" onmouseup="{ leftMouseUp  }"> ◀ </kbd><kbd class="down  { active: downDown  }" onmousedown="{ downMouseDown  }" onmouseup="{ downMouseUp  }"> ▼ </kbd><kbd class="right { active: rightDown }" onmousedown="{ rightMouseDown }" onmouseup="{ rightMouseUp }"> ▶ </kbd>\n\t\t\t        </div>\n\t\t        <div style="text-align: left; margin-top: 7px; padding-left: 2px;">\n\t\t\t        <label class="flex-row" style="display: inline-flex"><input type="checkbox" __checked="{ lockDirection }" onchange="{ updateLockDirection }" />&nbsp;lock direction</label>\n\t\t\t        <label class="flex-row" style="display: inline-flex"><input type="checkbox" __checked="{ lockPosition  }" onchange="{ updateLockPosition  }" />&nbsp;lock position </label>\n\t\t        </div>\n\t\t    </div>\n\t\t    <div class="info">\n\t\t        <b>time-travel</b>\n\t\t        <div class="flex-row" style="margin-top: 4px">\n\t\t\t        <kbd class       = "light backspace { active: backspaceDown  }"\n\t\t\t             onmousedown = "{ backspaceMouseDown }"\n\t\t\t             onmouseup   = "{ backspaceMouseUp   }"> ← </kbd>\n\t\t\t        <input class="time-travel-distance" type="number"\n\t\t\t               value="{ player.controller.timeTravelDistance }"\n\t\t\t               onchange="{ updateTimeTravelDistance }" />\n\t\t        </div>\n\t\t    </div>\n        </div>\n\t</div>\n\n\n', '\n\n\t* {\n\t    box-sizing: border-box;\n    }\n\n    .flex-row {\n        display: flex;\n        flex-direction: row;\n        justify-content: space-between;\n        align-items: center;\n    }\n    .flex-row > *             { margin-left: 4px }\n    .flex-row > *:first-child { margin-left: 0px }\n\n    .flex-col {\n        display: flex;\n        flex-direction: column;\n        justify-content: space-between;\n        align-items: center;\n    }\n    .flex-col > *             { margin-top: 4px }\n    .flex-col > *:first-child { margin-top: 0px }\n\n\tkbd {\n\t\tdisplay: inline-block;\n\t\theight:      22px;\n\t\tmin-height:  22px;\n\t\tmax-height:  22px;\n\t\twidth:       22px;\n\t\tmin-width:   22px;\n\t\tmax-width:   22px;\n\t\tfont-size:   16px !important;\n\t\tline-height: 16px !important;\n\t\tpadding: 2px;\n\t\ttext-align: center;\n\t\tcursor: pointer;\n\n\t\tborder: none;\n\t\ttext-decoration: none;\n\t\t-moz-border-radius: .3em;\n\t\t-webkit-border-radius: .3em;\n\t\tborder-radius: .3em;\n\t\t-moz-user-select: none;\n\t\t-webkit-user-select: none;\n\t\tuser-select: none;\n\n\t\tbackground: rgb(250, 250, 250);\n\t\tbackground: -moz-linear-gradient(top, rgb(210, 210, 210), rgb(255, 255, 255));\n\t\tbackground: -webkit-gradient(linear, left top, left bottom, from(rgb(210, 210, 210)), to(rgb(255, 255, 255)));\n\t\tcolor:  rgb(50, 50, 50);\n\t\ttext-shadow: 0 0 2px rgb(255, 255, 255);\n\t\t-moz-box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .1em 0 rgb(130, 130, 130), 0 .11em 0 rgba(0, 0, 0, .4), 0 .1em .11em rgba(0, 0, 0, .9);\n\t\t-webkit-box-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .1em 0 rgb(130, 130, 130), 0 .11em 0 rgba(0, 0, 0, .4), 0 .1em .11em rgba(0, 0, 0, .9);\n\t\tbox-shadow: inset 0 0 1px rgb(255, 255, 255), inset 0 0 .4em rgb(200, 200, 200), 0 .1em 0 rgb(130, 130, 130), 0 .11em 0 rgba(0, 0, 0, .4), 0 .1em .11em rgba(0, 0, 0, .9);\n\t}\n\tkbd.backspace {\n\t\twidth:     64px;\n\t\tmin-width: 64px;\n\t\tmax-width: 64px;\n\t}\n\tkbd.active {\n\t\tbackground: lightblue;\n\t\tbackground: -moz-linear-gradient(top, rgb(210, 210, 210), lightblue);\n\t\tbackground: -webkit-gradient(linear, left top, left bottom, from(rgb(210, 210, 210)), to(lightblue));\n\t}\n\tinput.time-travel-distance {\n\t\tborder: solid 1px gray;\n\t\tborder-radius: 3px;\n\t\theight:     24px;\n\t\tmin-height: 24px;\n\t\tmax-height: 24px;\n\t\twidth:      44px;\n\t\tmin-width:  44px;\n\t\tmax-width:  44px;\n\t\tpadding: 0 0 0 4px;\n\t}\n\n    .world-map {\n        display: inline-block;\n    }\n    div.info {\n        display: block;\n        margin: 4px;\n        text-align: center;\n        padding: 4px;\n        border: solid 1px gray;\n        background-color: #eee;\n        width: 124px;\n    }\n    table {\n        border-spacing: 0;\n        border-width: 1px;\n        border-color: lightgray;\n        border-style: ' + (_configEs6Js.showGrid ? 'none solid solid none' : 'none') + ';\n    }\n    td {\n        border-width: 1px;\n        border-color: lightgray;\n        border-style: ' + (_configEs6Js.showGrid ? 'solid none none solid' : 'none') + ';\n    }\n    td, .tile-square {\n        width:      32px;\n        height:     32px;\n        max-width:  32px;\n        max-height: 32px;\n        overflow: hidden;\n        margin:  0;\n        padding: 0;\n        text-align: center;\n    }\n    td {\n        position: relative;\n    }\n    div.tile-square {\n        position: absolute;\n        top:  0;\n        left: 0;\n    }\n    div.center-content {\n        display: flex;\n        align-items: flex-end;\n        justify-content: right;\n    }\n    span.age-indicator {\n        font-weight: bold;\n        color: white;\n        background-color: black;\n        padding: 0 2px;\n    }\n\n', '\n\n\tclass="world-map"\n\n', function (opts) {
 		var _this = this;
 	
 		/* the reality provider */
@@ -17325,13 +17327,81 @@
 			};
 		})();
 	
+		/* events of fields / buttons / etc. */
 		this.updateTimeTravelDistance = function (e) {
-			//console.log(e);
 			_this.player.controller.timeTravelDistance = e.target.value;
 		};
+		this.lockPosition = false;
+		this.updateLockPosition = function (e) {
+			_this.lockPosition = e.target.checked;
+		};
+		this.lockDirection = false;
+		this.updateLockDirection = function (e) {
+			_this.lockDirection = e.target.checked;
+		};
+		(0, _jquery2['default'])(document).keydown(function (_ref) {
+			var which = _ref.which;
+	
+			if (which === _keyboardCodesEs6Js.CTRL) {
+				_this.lockPosition = true;
+			}
+			if (which === _keyboardCodesEs6Js.SHIFT) {
+				_this.lockDirection = true;
+			}
+			_this.update();
+		});
+		(0, _jquery2['default'])(document).keyup(function (_ref2) {
+			var which = _ref2.which;
+	
+			if (which === _keyboardCodesEs6Js.CTRL) {
+				_this.lockPosition = false;
+			}
+			if (which === _keyboardCodesEs6Js.SHIFT) {
+				_this.lockDirection = false;
+			}
+			_this.update();
+		});
+		[['left', _keyboardCodesEs6Js.LEFT], ['up', _keyboardCodesEs6Js.UP], ['down', _keyboardCodesEs6Js.DOWN], ['right', _keyboardCodesEs6Js.RIGHT], ['backspace', _keyboardCodesEs6Js.BACKSPACE]].forEach(function (_ref3) {
+			var _ref32 = _slicedToArray(_ref3, 2);
+	
+			var name = _ref32[0];
+			var code = _ref32[1];
+	
+			_this[name + 'Down'] = false;
+			(0, _jquery2['default'])(document).keydown(function (_ref4) {
+				var which = _ref4.which;
+				if (which === code) {
+					_this[name + 'Down'] = true;_this.update();
+				}
+			});
+			(0, _jquery2['default'])(document).keyup(function (_ref5) {
+				var which = _ref5.which;
+				if (which === code) {
+					_this[name + 'Down'] = false;_this.update();
+				}
+			});
+			_this[name + 'MouseDown'] = function () {
+				var press = _jquery2['default'].Event("keydown");
+				press.which = code;
+				(0, _jquery2['default'])(document).trigger(press);
+			};
+			_this[name + 'MouseUp'] = function () {
+				var press = _jquery2['default'].Event("keyup");
+				press.which = code;
+				(0, _jquery2['default'])(document).trigger(press);
+			};
+		});
 	
 		/* move the player (and time) with the arrow keys */
 		(0, _jquery2['default'])(document).keydown(function (event) {
+	
+			/* set locked keys */
+			if (_this.lockPosition) {
+				event.ctrlKey = true;
+			}
+			if (_this.lockDirection) {
+				event.shiftKey = true;
+			}
 	
 			/* provide input to player controller */ // TODO: provide input to all dynamic entities
 			var inputUsed = _this.player.controller.acceptInput(event);
@@ -17358,37 +17428,6 @@
 	
 			/* update the visualization */
 			_this.update();
-		});
-	
-		[['left', _keyboardCodesEs6Js.LEFT], ['up', _keyboardCodesEs6Js.UP], ['down', _keyboardCodesEs6Js.DOWN], ['right', _keyboardCodesEs6Js.RIGHT], ['backspace', _keyboardCodesEs6Js.BACKSPACE]].forEach(function (_ref) {
-			var _ref2 = _slicedToArray(_ref, 2);
-	
-			var name = _ref2[0];
-			var code = _ref2[1];
-	
-			_this[name + 'Down'] = false;
-			(0, _jquery2['default'])(document).keydown(function (_ref3) {
-				var which = _ref3.which;
-				if (which === code) {
-					_this[name + 'Down'] = true;_this.update();
-				}
-			});
-			(0, _jquery2['default'])(document).keyup(function (_ref4) {
-				var which = _ref4.which;
-				if (which === code) {
-					_this[name + 'Down'] = false;_this.update();
-				}
-			});
-			_this[name + 'MouseDown'] = function () {
-				var press = _jquery2['default'].Event("keydown");
-				press.which = code;
-				(0, _jquery2['default'])(document).trigger(press);
-			};
-			_this[name + 'MouseUp'] = function () {
-				var press = _jquery2['default'].Event("keyup");
-				press.which = code;
-				(0, _jquery2['default'])(document).trigger(press);
-			};
 		});
 	
 		/* definitions to use in the HTML template */

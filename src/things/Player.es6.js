@@ -147,15 +147,15 @@ Player.KeyboardController = class KeyboardController {
 		return true;
 	}
 
-	apply(prev, { nextController = new Player.KeyboardController({
-		timeTravelDistance: this.timeTravelDistance
-	}) } = {}) {
+	apply(prev, {nextController} = {}) {
 		return {
 			t:          prev.t.plus(this.dt),
 			x:          prev.x    + this.dx,
 			y:          prev.y    + this.dy,
 			dir:        this.dir || prev.dir,
-			controller: nextController
+			controller: nextController || new Player.KeyboardController({
+				timeTravelDistance: this.timeTravelDistance
+			})
 		};
 	}
 

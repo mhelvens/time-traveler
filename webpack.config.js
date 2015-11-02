@@ -13,9 +13,9 @@ module.exports = {
 	},
 	module: {
 		loaders: [
-			{ test: /\.es6\.js$/, loader: 'babel?compact=false'                     },
-			{ test: /\.tag$/,     loader: 'babel?compact=false!imports?riot!riotjs' },
-			{ test: /\.png$/,     loader: 'url'                                     }
+			{ test: /\.es6\.js$/, loader: 'babel?compact=false' },
+			{ test: /\.png$/,     loader: 'url'                 },
+			{ test: /\.css$/,     loader: 'style!css'           }
 		]
 	},
 	plugins: [
