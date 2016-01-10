@@ -55,8 +55,8 @@ riot.tag('world-map', `
 					    <kbd class="left  { active: leftDown  }" onmousedown="{ leftMouseDown  }" onmouseup="{ leftMouseUp  }"> ◀ </kbd><kbd class="down  { active: downDown  }" onmousedown="{ downMouseDown  }" onmouseup="{ downMouseUp  }"> ▼ </kbd><kbd class="right { active: rightDown }" onmousedown="{ rightMouseDown }" onmouseup="{ rightMouseUp }"> ▶ </kbd>
 			        </div>
 		        <div style="text-align: left; margin-top: 7px; padding-left: 2px;">
-			        <label class="flex-row" style="display: inline-flex; font-family: 'Liberation Serif',serif;"><input type="checkbox" __checked="{ lockDirection }" onchange="{ updateLockDirection }" />&nbsp;lock direction</label>
-			        <label class="flex-row" style="display: inline-flex; font-family: 'Liberation Serif',serif;"><input type="checkbox" __checked="{ lockPosition  }" onchange="{ updateLockPosition  }" />&nbsp;lock position </label>
+			        <label class="flex-row" style="display: inline-flex; font-size: 10pt; font-family: 'Liberation Serif',serif;"><input type="checkbox" __checked="{ lockDirection }" onchange="{ updateLockDirection }" />&nbsp;lock direction</label>
+			        <label class="flex-row" style="display: inline-flex; font-size: 10pt; font-family: 'Liberation Serif',serif;"><input type="checkbox" __checked="{ lockPosition  }" onchange="{ updateLockPosition  }" />&nbsp;lock position </label>
 		        </div>
 		    </div>
 		    <div class="info">
